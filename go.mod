@@ -1,4 +1,4 @@
-module github.com/huntsman-li/go-cache
+module github.com/admpub/go-cache
 
 go 1.13
 
