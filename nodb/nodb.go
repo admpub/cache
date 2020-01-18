@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/webx-top/com"
 	"github.com/lunny/nodb"
 	"github.com/lunny/nodb/config"
 
 	"github.com/admpub/cache"
+	"github.com/admpub/cache/encoding"
 )
 
 var (
@@ -32,43 +32,46 @@ var (
 
 // NodbCacher represents a nodb cache adapter implementation.
 type NodbCacher struct {
+	cache.GetAs
+	codec    encoding.Codec
 	dbs      *nodb.Nodb
 	db       *nodb.DB
 	filepath string
 }
 
+func (c *NodbCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
+}
+
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *NodbCacher) Put(key string, val interface{}, expire int64) (err error) {
-	var v []byte
-	switch val.(type) {
-	case []byte:
-		v = val.([]byte)
-	default:
-		v = []byte(com.ToStr(val))
+	value, err := c.codec.Marshal(val)
+	if err != nil {
+		return err
 	}
-
-	if err = c.db.Set([]byte(key), v); err != nil {
+	kBytes := []byte(key)
+	if err = c.db.Set(kBytes, value); err != nil {
 		return err
 	}
 
 	if expire > 0 {
-		_, err = c.db.Expire([]byte(key), expire)
+		_, err = c.db.Expire(kBytes, expire)
 		return err
 	}
 	return nil
 }
 
 // Get gets cached value by given key.
-func (c *NodbCacher) Get(key string) interface{} {
+func (c *NodbCacher) Get(key string, value interface{}) error {
 	val, err := c.db.Get([]byte(key))
 	if err != nil {
-		return nil
+		return err
 	}
-	if len(val) > 0 {
-		return string(val)
+	if len(val) == 0 {
+		return cache.ErrNotFound
 	}
-	return nil
+	return c.codec.Unmarshal(val, value)
 }
 
 // Delete deletes cached value by given key.
@@ -136,6 +139,12 @@ func (c *NodbCacher) StartAndGC(opt cache.Options) error {
 	return c.new()
 }
 
+func New() cache.Cache {
+	c := &NodbCacher{codec: cache.DefaultCodec}
+	c.GetAs = cache.GetAs{Cache: c}
+	return c
+}
+
 func init() {
-	cache.Register("nodb", &NodbCacher{})
+	cache.Register("nodb", New())
 }

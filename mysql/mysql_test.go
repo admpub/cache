@@ -37,21 +37,21 @@ func Test_MysqlCacher(t *testing.T) {
 			So(c.Put("uname2", "unknwon2", 1), ShouldBeNil)
 			So(c.IsExist("uname"), ShouldBeTrue)
 
-			So(c.Get("404"), ShouldBeNil)
-			So(c.Get("uname").(string), ShouldEqual, "unknwon")
+			So(c.String("404"), ShouldBeNil)
+			So(c.String("uname"), ShouldEqual, "unknwon")
 
 			time.Sleep(1 * time.Second)
-			So(c.Get("uname"), ShouldBeNil)
+			So(c.String("uname"), ShouldBeNil)
 			time.Sleep(1 * time.Second)
-			So(c.Get("uname2"), ShouldBeNil)
+			So(c.String("uname2"), ShouldBeNil)
 
 			So(c.Put("uname", "unknwon", 0), ShouldBeNil)
 			So(c.Delete("uname"), ShouldBeNil)
-			So(c.Get("uname"), ShouldBeNil)
+			So(c.String("uname"), ShouldBeNil)
 
 			So(c.Put("uname", "unknwon", 0), ShouldBeNil)
 			So(c.Flush(), ShouldBeNil)
-			So(c.Get("uname"), ShouldBeNil)
+			So(c.String("uname"), ShouldBeNil)
 
 			So(c.Put("struct", opt, 0), ShouldBeNil)
 
@@ -95,12 +95,12 @@ func Test_MysqlCacher(t *testing.T) {
 			So(c.Incr("string"), ShouldNotBeNil)
 			So(c.Decr("string"), ShouldNotBeNil)
 
-			So(c.Get("int"), ShouldEqual, 0)
-			So(c.Get("int32"), ShouldEqual, 0)
-			So(c.Get("int64"), ShouldEqual, 0)
-			So(c.Get("uint"), ShouldEqual, 0)
-			So(c.Get("uint32"), ShouldEqual, 0)
-			So(c.Get("uint64"), ShouldEqual, 0)
+			So(c.Int("int"), ShouldEqual, 0)
+			So(c.Int32("int32"), ShouldEqual, 0)
+			So(c.Int64("int64"), ShouldEqual, 0)
+			So(c.Uint("uint"), ShouldEqual, 0)
+			So(c.Uint32("uint32"), ShouldEqual, 0)
+			So(c.Uint64("uint64"), ShouldEqual, 0)
 
 			So(c.Flush(), ShouldBeNil)
 

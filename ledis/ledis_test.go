@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/webx-top/com"
 	. "github.com/smartystreets/goconvey/convey"
 
 	"github.com/admpub/cache"
@@ -40,21 +39,21 @@ func Test_LedisCacher(t *testing.T) {
 			So(c.Put("uname2", "unknwon2", 1), ShouldBeNil)
 			So(c.IsExist("uname"), ShouldBeTrue)
 
-			So(c.Get("404"), ShouldBeNil)
-			So(c.Get("uname").(string), ShouldEqual, "unknwon")
+			So(c.String("404"), ShouldBeNil)
+			So(c.String("uname"), ShouldEqual, "unknwon")
 
 			time.Sleep(2 * time.Second)
-			So(c.Get("uname"), ShouldBeNil)
+			So(c.String("uname"), ShouldBeNil)
 			time.Sleep(1 * time.Second)
-			So(c.Get("uname2"), ShouldBeNil)
+			So(c.String("uname2"), ShouldBeNil)
 
 			So(c.Put("uname", "unknwon", 0), ShouldBeNil)
 			So(c.Delete("uname"), ShouldBeNil)
-			So(c.Get("uname"), ShouldBeNil)
+			So(c.String("uname"), ShouldBeNil)
 
 			So(c.Put("uname", "unknwon", 0), ShouldBeNil)
 			So(c.Flush(), ShouldBeNil)
-			So(c.Get("uname"), ShouldBeNil)
+			So(c.String("uname"), ShouldBeNil)
 
 			So(c.Incr("404"), ShouldNotBeNil)
 			So(c.Decr("404"), ShouldNotBeNil)
@@ -72,8 +71,8 @@ func Test_LedisCacher(t *testing.T) {
 			So(c.Incr("string"), ShouldNotBeNil)
 			So(c.Decr("string"), ShouldNotBeNil)
 
-			So(com.StrTo(c.Get("int").(string)).MustInt(), ShouldEqual, 0)
-			So(com.StrTo(c.Get("int64").(string)).MustInt64(), ShouldEqual, 0)
+			So(c.Int("int"), ShouldEqual, 0)
+			So(c.Int64("int64"), ShouldEqual, 0)
 
 			So(c.Flush(), ShouldBeNil)
 		})

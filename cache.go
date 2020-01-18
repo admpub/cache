@@ -16,6 +16,9 @@ package cache
 
 import (
 	"fmt"
+
+	"github.com/admpub/cache/encoding"
+	"github.com/admpub/cache/encoding/msgpack"
 	"github.com/admpub/ini"
 )
 
@@ -30,7 +33,7 @@ type Cache interface {
 	// Put puts value into cache with key and expire time.
 	Put(key string, val interface{}, timeout int64) error
 	// Get gets cached value by given key.
-	Get(key string) interface{}
+	Get(key string, value interface{}) error
 	// Delete deletes cached value by given key.
 	Delete(key string) error
 	// Incr increases cached int-type value by given key as a counter.
@@ -43,6 +46,36 @@ type Cache interface {
 	Flush() error
 	// StartAndGC starts GC routine based on config string settings.
 	StartAndGC(opt Options) error
+	SetCodec
+	Getter
+}
+
+type Getter interface {
+	String(key string) string
+
+	Int(key string) int
+
+	Uint(key string) uint
+
+	Int64(key string) int64
+
+	Uint64(key string) uint64
+
+	Int32(key string) int32
+
+	Uint32(key string) uint32
+
+	Float32(key string) float32
+
+	Float64(key string) float64
+
+	Bytes(key string) []byte
+}
+
+var DefaultCodec encoding.Codec = msgpack.MsgPack
+
+type SetCodec interface {
+	SetCodec(encoding.Codec)
 }
 
 // Options represents a struct for specifying configuration options for the cache middleware.

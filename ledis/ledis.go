@@ -20,47 +20,62 @@ import (
 	"strings"
 	"time"
 
-	"github.com/webx-top/com"
 	"github.com/siddontang/ledisdb/config"
 	"github.com/siddontang/ledisdb/ledis"
+	"github.com/webx-top/com"
 
-	"github.com/admpub/ini"
 	"github.com/admpub/cache"
+	"github.com/admpub/cache/encoding"
+	"github.com/admpub/ini"
 )
 
 var defaultHSetName = []byte("Cache")
 
 // LedisCacher represents a ledis cache adapter implementation.
 type LedisCacher struct {
+	cache.GetAs
+	codec    encoding.Codec
 	c        *ledis.DB
 	interval int
+}
+
+func (c *LedisCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
 }
 
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *LedisCacher) Put(key string, val interface{}, expire int64) (err error) {
+	value, err := c.codec.Marshal(val)
+	if err != nil {
+		return err
+	}
+	kBytes := []byte(key)
 	if expire == 0 {
-		if err = c.c.Set([]byte(key), []byte(com.ToStr(val))); err != nil {
+		if err = c.c.Set(kBytes, value); err != nil {
 			return err
 		}
-		_, err = c.c.HSet([]byte(key), defaultHSetName, []byte("0"))
+		_, err = c.c.HSet(kBytes, defaultHSetName, []byte("0"))
 		return err
 	}
 
-	if err = c.c.SetEX([]byte(key), expire, []byte(com.ToStr(val))); err != nil {
+	if err = c.c.SetEX(kBytes, expire, value); err != nil {
 		return err
 	}
-	_, err = c.c.HSet([]byte(key), defaultHSetName, []byte(com.ToStr(time.Now().Add(time.Duration(expire)*time.Second).Unix())))
+	_, err = c.c.HSet(kBytes, defaultHSetName, []byte(com.ToStr(time.Now().Add(time.Duration(expire)*time.Second).Unix())))
 	return err
 }
 
 // Get gets cached value by given key.
-func (c *LedisCacher) Get(key string) interface{} {
+func (c *LedisCacher) Get(key string, value interface{}) error {
 	val, err := c.c.Get([]byte(key))
-	if err != nil || len(val) == 0 {
-		return nil
+	if err != nil {
+		return err
 	}
-	return string(val)
+	if len(val) == 0 {
+		return cache.ErrNotFound
+	}
+	return c.codec.Unmarshal(val, value)
 }
 
 // Delete deletes cached value by given key.
@@ -180,6 +195,12 @@ func (c *LedisCacher) StartAndGC(opts cache.Options) error {
 	return nil
 }
 
+func New() cache.Cache {
+	c := &LedisCacher{codec: cache.DefaultCodec}
+	c.GetAs = cache.GetAs{Cache: c}
+	return c
+}
+
 func init() {
-	cache.Register("ledis", &LedisCacher{})
+	cache.Register("ledis", New())
 }

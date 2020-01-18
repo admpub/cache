@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	. "github.com/smartystreets/goconvey/convey"
+	"github.com/stretchr/testify/assert"
 )
 
 func Test_MemoryCacher(t *testing.T) {
@@ -26,4 +27,15 @@ func Test_MemoryCacher(t *testing.T) {
 			Interval: 2,
 		})
 	})
+}
+
+func Test_MemoryCacher2(t *testing.T) {
+	c, err := Cacher(Options{
+		Adapter:  `memory`,
+		Interval: 2,
+	})
+	assert.NoError(t, err)
+	err = c.Put(`exists`, `exists`, 86400)
+	assert.NoError(t, err)
+	assert.Equal(t, `exists`, c.String(`exists`))
 }

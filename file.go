@@ -26,6 +26,8 @@ import (
 	"time"
 
 	"github.com/webx-top/com"
+
+	"github.com/admpub/cache/encoding"
 )
 
 // Item represents a cache item.
@@ -42,6 +44,8 @@ func (item *Item) hasExpired() bool {
 
 // FileCacher represents a file cache adapter implementation.
 type FileCacher struct {
+	GetAs
+	codec    encoding.Codec
 	lock     sync.Mutex
 	rootPath string
 	interval int // GC interval.
@@ -49,7 +53,13 @@ type FileCacher struct {
 
 // NewFileCacher creates and returns a new file cacher.
 func NewFileCacher() *FileCacher {
-	return &FileCacher{}
+	c := &FileCacher{codec: DefaultCodec}
+	c.GetAs = GetAs{Cache: c}
+	return c
+}
+
+func (c *FileCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
 }
 
 func (c *FileCacher) filepath(key string) string {
@@ -63,7 +73,7 @@ func (c *FileCacher) filepath(key string) string {
 func (c *FileCacher) Put(key string, val interface{}, expire int64) error {
 	filename := c.filepath(key)
 	item := &Item{val, time.Now().Unix(), expire}
-	data, err := EncodeGob(item)
+	data, err := c.codec.Marshal(item)
 	if err != nil {
 		return err
 	}
@@ -72,30 +82,36 @@ func (c *FileCacher) Put(key string, val interface{}, expire int64) error {
 	return ioutil.WriteFile(filename, data, os.ModePerm)
 }
 
-func (c *FileCacher) read(key string) (*Item, error) {
+func (c *FileCacher) read(key string, value interface{}) (*Item, error) {
 	filename := c.filepath(key)
 
 	data, err := ioutil.ReadFile(filename)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 
-	item := new(Item)
-	return item, DecodeGob(data, item)
+	item := &Item{Val: value}
+	return item, c.codec.Unmarshal(data, item)
 }
 
 // Get gets cached value by given key.
-func (c *FileCacher) Get(key string) interface{} {
-	item, err := c.read(key)
+func (c *FileCacher) Get(key string, value interface{}) error {
+	item, err := c.read(key, value)
 	if err != nil {
-		return nil
+		return err
+	}
+	if item.Val == nil {
+		return ErrNotFound
 	}
 
 	if item.hasExpired() {
 		os.Remove(c.filepath(key))
-		return nil
+		return ErrExpired
 	}
-	return item.Val
+	return nil
 }
 
 // Delete deletes cached value by given key.
@@ -105,12 +121,13 @@ func (c *FileCacher) Delete(key string) error {
 
 // Incr increases cached int-type value by given key as a counter.
 func (c *FileCacher) Incr(key string) error {
-	item, err := c.read(key)
+	var i int64
+	item, err := c.read(key, &i)
 	if err != nil {
 		return err
 	}
 
-	item.Val, err = Incr(item.Val)
+	item.Val, err = Incr(i)
 	if err != nil {
 		return err
 	}
@@ -118,14 +135,15 @@ func (c *FileCacher) Incr(key string) error {
 	return c.Put(key, item.Val, item.Expire)
 }
 
-// Decrease cached int value.
+// Decr cached int value.
 func (c *FileCacher) Decr(key string) error {
-	item, err := c.read(key)
+	var i int64
+	item, err := c.read(key, &i)
 	if err != nil {
 		return err
 	}
 
-	item.Val, err = Decr(item.Val)
+	item.Val, err = Decr(i)
 	if err != nil {
 		return err
 	}
@@ -165,8 +183,8 @@ func (c *FileCacher) startGC() {
 			fmt.Errorf("ReadFile: %v", err)
 		}
 
-		item := new(Item)
-		if err = DecodeGob(data, item); err != nil {
+		item := &Item{}
+		if err = c.codec.Unmarshal(data, item); err != nil {
 			return err
 		}
 		if item.hasExpired() {

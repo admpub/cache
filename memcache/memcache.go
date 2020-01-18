@@ -17,15 +17,17 @@ package cache
 import (
 	"strings"
 
-	"github.com/webx-top/com"
 	"github.com/bradfitz/gomemcache/memcache"
 
 	"github.com/admpub/cache"
+	"github.com/admpub/cache/encoding"
 )
 
 // MemcacheCacher represents a memcache cache adapter implementation.
 type MemcacheCacher struct {
-	c *memcache.Client
+	cache.GetAs
+	codec encoding.Codec
+	c     *memcache.Client
 }
 
 func NewItem(key string, data []byte, expire int32) *memcache.Item {
@@ -36,19 +38,30 @@ func NewItem(key string, data []byte, expire int32) *memcache.Item {
 	}
 }
 
+func (c *MemcacheCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
+}
+
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *MemcacheCacher) Put(key string, val interface{}, expire int64) error {
-	return c.c.Set(NewItem(key, []byte(com.ToStr(val)), int32(expire)))
+	value, err := c.codec.Marshal(val)
+	if err != nil {
+		return err
+	}
+	return c.c.Set(NewItem(key, value, int32(expire)))
 }
 
 // Get gets cached value by given key.
-func (c *MemcacheCacher) Get(key string) interface{} {
+func (c *MemcacheCacher) Get(key string, value interface{}) error {
 	item, err := c.c.Get(key)
 	if err != nil {
-		return nil
+		return err
 	}
-	return string(item.Value)
+	if item == nil || item.Value == nil {
+		return cache.ErrNotFound
+	}
+	return c.codec.Unmarshal(item.Value, value)
 }
 
 // Delete deletes cached value by given key.
@@ -86,6 +99,12 @@ func (c *MemcacheCacher) StartAndGC(opt cache.Options) error {
 	return nil
 }
 
+func New() cache.Cache {
+	c := &MemcacheCacher{codec: cache.DefaultCodec}
+	c.GetAs = cache.GetAs{Cache: c}
+	return c
+}
+
 func init() {
-	cache.Register("memcache", &MemcacheCacher{})
+	cache.Register("memcache", New())
 }

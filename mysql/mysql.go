@@ -24,17 +24,26 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 
 	"github.com/admpub/cache"
+	"github.com/admpub/cache/encoding"
 )
 
 // MysqlCacher represents a mysql cache adapter implementation.
 type MysqlCacher struct {
+	cache.GetAs
+	codec    encoding.Codec
 	c        *sql.DB
 	interval int
 }
 
-// NewMysqlCacher creates and returns a new mysql cacher.
-func NewMysqlCacher() *MysqlCacher {
-	return &MysqlCacher{}
+// New creates and returns a new mysql cacher.
+func New() cache.Cache {
+	c := &MysqlCacher{codec: cache.DefaultCodec}
+	c.GetAs = cache.GetAs{Cache: c}
+	return c
+}
+
+func (c *MysqlCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
 }
 
 func (c *MysqlCacher) md5(key string) string {
@@ -46,7 +55,7 @@ func (c *MysqlCacher) md5(key string) string {
 // If expired is 0, it will be deleted by next GC operation.
 func (c *MysqlCacher) Put(key string, val interface{}, expire int64) error {
 	item := &cache.Item{Val: val}
-	data, err := cache.EncodeGob(item)
+	data, err := c.codec.Marshal(item)
 	if err != nil {
 		return err
 	}
@@ -60,7 +69,7 @@ func (c *MysqlCacher) Put(key string, val interface{}, expire int64) error {
 	return err
 }
 
-func (c *MysqlCacher) read(key string) (*cache.Item, error) {
+func (c *MysqlCacher) read(key string, value interface{}) (*cache.Item, error) {
 	var (
 		data    []byte
 		created int64
@@ -71,8 +80,8 @@ func (c *MysqlCacher) read(key string) (*cache.Item, error) {
 		return nil, err
 	}
 
-	item := new(cache.Item)
-	if err = cache.DecodeGob(data, item); err != nil {
+	item := &cache.Item{Val: value}
+	if err = c.codec.Unmarshal(data, item); err != nil {
 		return nil, err
 	}
 	item.Created = created
@@ -81,18 +90,21 @@ func (c *MysqlCacher) read(key string) (*cache.Item, error) {
 }
 
 // Get gets cached value by given key.
-func (c *MysqlCacher) Get(key string) interface{} {
-	item, err := c.read(key)
+func (c *MysqlCacher) Get(key string, value interface{}) error {
+	item, err := c.read(key, value)
 	if err != nil {
 		return nil
+	}
+	if item.Val == nil {
+		return cache.ErrNotFound
 	}
 
 	if item.Expire > 0 &&
 		(time.Now().Unix()-item.Created) >= item.Expire {
 		c.Delete(key)
-		return nil
+		return cache.ErrExpired
 	}
-	return item.Val
+	return nil
 }
 
 // Delete deletes cached value by given key.
@@ -103,12 +115,13 @@ func (c *MysqlCacher) Delete(key string) error {
 
 // Incr increases cached int-type value by given key as a counter.
 func (c *MysqlCacher) Incr(key string) error {
-	item, err := c.read(key)
+	var i int64
+	item, err := c.read(key, &i)
 	if err != nil {
 		return err
 	}
 
-	item.Val, err = cache.Incr(item.Val)
+	item.Val, err = cache.Incr(i)
 	if err != nil {
 		return err
 	}
@@ -116,9 +129,10 @@ func (c *MysqlCacher) Incr(key string) error {
 	return c.Put(key, item.Val, item.Expire)
 }
 
-// Decrease cached int value.
+// Decr cached int value.
 func (c *MysqlCacher) Decr(key string) error {
-	item, err := c.read(key)
+	var i int64
+	item, err := c.read(key, i)
 	if err != nil {
 		return err
 	}
@@ -175,5 +189,5 @@ func (c *MysqlCacher) StartAndGC(opt cache.Options) (err error) {
 }
 
 func init() {
-	cache.Register("mysql", NewMysqlCacher())
+	cache.Register("mysql", New())
 }

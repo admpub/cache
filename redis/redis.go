@@ -20,34 +20,41 @@ import (
 	"time"
 
 	"github.com/webx-top/com"
-	"github.com/admpub/ini"
 	"gopkg.in/redis.v2"
 
 	"github.com/admpub/cache"
+	"github.com/admpub/cache/encoding"
+	"github.com/admpub/ini"
 )
 
 // RedisCacher represents a redis cache adapter implementation.
 type RedisCacher struct {
+	cache.GetAs
+	codec      encoding.Codec
 	c          *redis.Client
 	prefix     string
 	hsetName   string
 	occupyMode bool
 }
 
+func (c *RedisCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
+}
+
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *RedisCacher) Put(key string, val interface{}, expire int64) error {
 	key = c.prefix + key
+	value, err := c.codec.Marshal(val)
+	if err != nil {
+		return err
+	}
 	if expire == 0 {
-		if err := c.c.Set(key, com.ToStr(val)).Err(); err != nil {
+		if err := c.c.Set(key, com.Bytes2str(value)).Err(); err != nil {
 			return err
 		}
 	} else {
-		dur, err := time.ParseDuration(com.ToStr(expire) + "s")
-		if err != nil {
-			return err
-		}
-		if err = c.c.SetEx(key, dur, com.ToStr(val)).Err(); err != nil {
+		if err := c.c.SetEx(key, time.Duration(expire)*time.Second, com.Bytes2str(value)).Err(); err != nil {
 			return err
 		}
 	}
@@ -59,12 +66,19 @@ func (c *RedisCacher) Put(key string, val interface{}, expire int64) error {
 }
 
 // Get gets cached value by given key.
-func (c *RedisCacher) Get(key string) interface{} {
+func (c *RedisCacher) Get(key string, value interface{}) error {
 	val, err := c.c.Get(c.prefix + key).Result()
 	if err != nil {
-		return nil
+		if err == redis.Nil {
+			return cache.ErrNotFound
+		}
+		return err
 	}
-	return val
+	if len(val) == 0 {
+		return cache.ErrNotFound
+	}
+
+	return c.codec.Unmarshal(com.Str2bytes(val), value)
 }
 
 // Delete deletes cached value by given key.
@@ -160,7 +174,7 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 		case "prefix":
 			c.prefix = v
 		default:
-			return fmt.Errorf("session/redis: unsupported option '%s'", k)
+			return fmt.Errorf("cache/redis: unsupported option '%s'", k)
 		}
 	}
 
@@ -172,6 +186,12 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 	return nil
 }
 
+func New() cache.Cache {
+	c := &RedisCacher{codec: cache.DefaultCodec}
+	c.GetAs = cache.GetAs{Cache: c}
+	return c
+}
+
 func init() {
-	cache.Register("redis", &RedisCacher{})
+	cache.Register("redis", New())
 }

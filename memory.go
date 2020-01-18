@@ -18,6 +18,10 @@ import (
 	"errors"
 	"sync"
 	"time"
+
+	"github.com/admpub/copier"
+
+	"github.com/admpub/cache/encoding"
 )
 
 // MemoryItem represents a memory cache item.
@@ -34,14 +38,22 @@ func (item *MemoryItem) hasExpired() bool {
 
 // MemoryCacher represents a memory cache adapter implementation.
 type MemoryCacher struct {
+	GetAs
+	codec    encoding.Codec
 	lock     sync.RWMutex
 	items    map[string]*MemoryItem
 	interval int // GC interval.
 }
 
 // NewMemoryCacher creates and returns a new memory cacher.
-func NewMemoryCacher() *MemoryCacher {
-	return &MemoryCacher{items: make(map[string]*MemoryItem)}
+func NewMemoryCacher() Cache {
+	c := &MemoryCacher{codec: DefaultCodec, items: make(map[string]*MemoryItem)}
+	c.GetAs = GetAs{Cache: c}
+	return c
+}
+
+func (c *MemoryCacher) SetCodec(codec encoding.Codec) {
+	c.codec = codec
 }
 
 // Put puts value into cache with key and expire time.
@@ -59,19 +71,19 @@ func (c *MemoryCacher) Put(key string, val interface{}, expire int64) error {
 }
 
 // Get gets cached value by given key.
-func (c *MemoryCacher) Get(key string) interface{} {
+func (c *MemoryCacher) Get(key string, value interface{}) error {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
 	item, ok := c.items[key]
 	if !ok {
-		return nil
+		return ErrNotFound
 	}
 	if item.hasExpired() {
 		go c.Delete(key)
-		return nil
+		return ErrExpired
 	}
-	return item.val
+	return copier.Copy(value, item.val)
 }
 
 // Delete deletes cached value by given key.
@@ -155,7 +167,7 @@ func (c *MemoryCacher) startGC() {
 	}
 
 	if c.items != nil {
-		for key, _ := range c.items {
+		for key := range c.items {
 			c.checkRawExpiration(key)
 		}
 	}

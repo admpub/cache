@@ -15,20 +15,75 @@
 package cache
 
 import (
-	"bytes"
-	"encoding/gob"
 	"errors"
 )
 
-func EncodeGob(item *Item) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	err := gob.NewEncoder(buf).Encode(item)
-	return buf.Bytes(), err
+func As(cache Cache) GetAs {
+	return GetAs{Cache: cache}
 }
 
-func DecodeGob(data []byte, out *Item) error {
-	buf := bytes.NewBuffer(data)
-	return gob.NewDecoder(buf).Decode(&out)
+type GetAs struct {
+	Cache
+}
+
+func (g GetAs) String(key string) string {
+	var r string
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Int(key string) int {
+	var r int
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Uint(key string) uint {
+	var r uint
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Int64(key string) int64 {
+	var r int64
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Uint64(key string) uint64 {
+	var r uint64
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Int32(key string) int32 {
+	var r int32
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Uint32(key string) uint32 {
+	var r uint32
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Float32(key string) float32 {
+	var r float32
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Float64(key string) float64 {
+	var r float64
+	g.Get(key, &r)
+	return r
+}
+
+func (g GetAs) Bytes(key string) []byte {
+	var r []byte
+	g.Get(key, &r)
+	return r
 }
 
 func Incr(val interface{}) (interface{}, error) {
