@@ -1,4 +1,4 @@
-module github.com/admpub/go-cache
+module github.com/admpub/cache
 
 go 1.13
 
