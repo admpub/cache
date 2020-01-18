@@ -139,6 +139,16 @@ func (c *NodbCacher) StartAndGC(opt cache.Options) error {
 	return c.new()
 }
 
+func (c *NodbCacher) Close() error {
+	if c.dbs == nil {
+		return nil
+	}
+	c.dbs.Close()
+	c.db = nil
+	c.dbs = nil
+	return nil
+}
+
 func New() cache.Cache {
 	c := &NodbCacher{codec: cache.DefaultCodec}
 	c.GetAs = cache.GetAs{Cache: c}

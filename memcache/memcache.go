@@ -99,6 +99,13 @@ func (c *MemcacheCacher) StartAndGC(opt cache.Options) error {
 	return nil
 }
 
+func (c *MemcacheCacher) Close() error {
+	if c.c == nil {
+		return nil
+	}
+	return nil
+}
+
 func New() cache.Cache {
 	c := &MemcacheCacher{codec: cache.DefaultCodec}
 	c.GetAs = cache.GetAs{Cache: c}

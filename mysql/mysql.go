@@ -188,6 +188,14 @@ func (c *MysqlCacher) StartAndGC(opt cache.Options) (err error) {
 	return nil
 }
 
+func (c *MysqlCacher) Close() error {
+	c.interval = 0
+	if c.c == nil {
+		return nil
+	}
+	return c.c.Close()
+}
+
 func init() {
 	cache.Register("mysql", New())
 }

@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/admpub/copier"
-
 	"github.com/admpub/cache/encoding"
 )
 
@@ -183,6 +182,11 @@ func (c *MemoryCacher) StartAndGC(opt Options) error {
 
 	go c.startGC()
 	return nil
+}
+
+func (c *MemoryCacher) Close() error {
+	c.interval = 0
+	return c.Flush()
 }
 
 func init() {

@@ -188,6 +188,14 @@ func (c *PostgresCacher) StartAndGC(opt cache.Options) (err error) {
 	return nil
 }
 
+func (c *PostgresCacher) Close() error {
+	c.interval = 0
+	if c.c == nil {
+		return nil
+	}
+	return c.c.Close()
+}
+
 func init() {
 	cache.Register("postgres", New())
 }

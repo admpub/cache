@@ -219,6 +219,11 @@ func (c *FileCacher) StartAndGC(opt Options) error {
 	return nil
 }
 
+func (c *FileCacher) Close() error {
+	c.interval = 0
+	return nil
+}
+
 func init() {
 	Register("file", NewFileCacher())
 }

@@ -195,6 +195,14 @@ func (c *LedisCacher) StartAndGC(opts cache.Options) error {
 	return nil
 }
 
+func (c *LedisCacher) Close() error {
+	c.interval = 0
+	if c.c == nil {
+		return nil
+	}
+	return c.c.Close()
+}
+
 func New() cache.Cache {
 	c := &LedisCacher{codec: cache.DefaultCodec}
 	c.GetAs = cache.GetAs{Cache: c}

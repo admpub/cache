@@ -186,6 +186,13 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 	return nil
 }
 
+func (c *RedisCacher) Close() error {
+	if c.c == nil {
+		return nil
+	}
+	return c.c.Close()
+}
+
 func New() cache.Cache {
 	c := &RedisCacher{codec: cache.DefaultCodec}
 	c.GetAs = cache.GetAs{Cache: c}

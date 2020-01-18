@@ -48,6 +48,7 @@ type Cache interface {
 	Flush() error
 	// StartAndGC starts GC routine based on config string settings.
 	StartAndGC(opt Options) error
+	Close() error
 	SetCodec
 	Getter
 }
