@@ -145,6 +145,19 @@ func Register(name string, adapter Cache) {
 	adapters[name] = adapter
 }
 
+func Adapters() []string {
+	var r []string
+	for name := range adapters {
+		r = append(r, name)
+	}
+	return r
+}
+
+func HasAdapter(name string) bool {
+	_, ok := adapters[name]
+	return ok
+}
+
 func Config() *ini.File {
 	if cfg == nil {
 		return ini.Empty()
