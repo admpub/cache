@@ -6,8 +6,8 @@ example
 package main
 
 import (
-	"github.com/huntsman-li/go-cache"
-	_ "github.com/huntsman-li/go-cache/redis"
+	"github.com/admpub/cache"
+	_ "github.com/admpub/cache/redis"
 )
 
 func main() {

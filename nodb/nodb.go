@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Unknwon/com"
+	"github.com/webx-top/com"
 	"github.com/lunny/nodb"
 	"github.com/lunny/nodb/config"
 
-	"github.com/huntsman-li/go-cache"
+	"github.com/admpub/cache"
 )
 
 var (

@@ -24,7 +24,7 @@ Package ini provides INI file read and write functionality in Go.
 
 To use a tagged revision:
 
-	go get gopkg.in/ini.v1
+	go get github.com/admpub/ini
 
 To use with latest changes:
 
@@ -36,7 +36,7 @@ Please add `-u` flag to update in the future.
 
 If you want to test on your machine, please apply `-t` flag:
 
-	go get -t gopkg.in/ini.v1
+	go get -t github.com/admpub/ini
 
 Please add `-u` flag to update in the future.
 
@@ -480,7 +480,7 @@ CLONE_URL = https://%(IMPORT_PATH)s
 ```
 
 ```go
-cfg.Section("package.sub").Key("CLONE_URL").String()	// https://gopkg.in/ini.v1
+cfg.Section("package.sub").Key("CLONE_URL").String()	// https://github.com/admpub/ini
 ```
 
 #### Retrieve parent keys available to a child section
@@ -632,7 +632,7 @@ places = HangZhou,Boston
 
 #### Name Mapper
 
-To save your time and make your code cleaner, this library supports [`NameMapper`](https://gowalker.org/gopkg.in/ini.v1#NameMapper) between struct field and actual section and key name.
+To save your time and make your code cleaner, this library supports [`NameMapper`](https://gowalker.org/github.com/admpub/ini#NameMapper) between struct field and actual section and key name.
 
 There are 2 built-in name mappers:
 
@@ -743,7 +743,7 @@ Age = 21
 
 ## Getting Help
 
-- [API Documentation](https://gowalker.org/gopkg.in/ini.v1)
+- [API Documentation](https://gowalker.org/github.com/admpub/ini)
 - [File An Issue](https://github.com/go-ini/ini/issues/new)
 
 ## FAQs

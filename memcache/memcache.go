@@ -17,10 +17,10 @@ package cache
 import (
 	"strings"
 
-	"github.com/Unknwon/com"
+	"github.com/webx-top/com"
 	"github.com/bradfitz/gomemcache/memcache"
 
-	"github.com/huntsman-li/go-cache"
+	"github.com/admpub/cache"
 )
 
 // MemcacheCacher represents a memcache cache adapter implementation.

@@ -20,12 +20,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Unknwon/com"
+	"github.com/webx-top/com"
 	"github.com/siddontang/ledisdb/config"
 	"github.com/siddontang/ledisdb/ledis"
-	"gopkg.in/ini.v1"
 
-	"github.com/huntsman-li/go-cache"
+	"github.com/admpub/ini"
+	"github.com/admpub/cache"
 )
 
 var defaultHSetName = []byte("Cache")

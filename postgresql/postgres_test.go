@@ -20,7 +20,7 @@ import (
 
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/huntsman-li/go-cache"
+	"github.com/admpub/cache"
 )
 
 func Test_PostgresCacher(t *testing.T) {

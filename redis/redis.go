@@ -19,11 +19,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Unknwon/com"
-	"gopkg.in/ini.v1"
+	"github.com/webx-top/com"
+	"github.com/admpub/ini"
 	"gopkg.in/redis.v2"
 
-	"github.com/huntsman-li/go-cache"
+	"github.com/admpub/cache"
 )
 
 // RedisCacher represents a redis cache adapter implementation.

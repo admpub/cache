@@ -18,10 +18,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Unknwon/com"
+	"github.com/webx-top/com"
 	. "github.com/smartystreets/goconvey/convey"
 
-	"github.com/huntsman-li/go-cache"
+	"github.com/admpub/cache"
 )
 
 func Test_MemcacheCacher(t *testing.T) {

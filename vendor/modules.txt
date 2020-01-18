@@ -1,7 +1,7 @@
 # github.com/BurntSushi/toml v0.3.1
 github.com/BurntSushi/toml
-# github.com/Unknwon/com v0.0.0-20170213072014-0db4a625e949
-github.com/Unknwon/com
+# github.com/webx-top/com v0.0.0-20170213072014-0db4a625e949
+github.com/webx-top/com
 # github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 github.com/bradfitz/gomemcache/memcache
 # github.com/cupcake/rdb v0.0.0-20161107195141-43ba34106c76
@@ -83,7 +83,7 @@ golang.org/x/sys/windows
 google.golang.org/appengine/cloudsql
 # gopkg.in/bufio.v1 v1.0.0-20140618132640-567b2bfa514e
 gopkg.in/bufio.v1
-# gopkg.in/ini.v1 v1.32.0
-gopkg.in/ini.v1
+# github.com/admpub/ini v1.32.0
+github.com/admpub/ini
 # gopkg.in/redis.v2 v2.3.2
 gopkg.in/redis.v2

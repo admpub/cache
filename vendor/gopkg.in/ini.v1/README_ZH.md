@@ -17,7 +17,7 @@
 
 使用一个特定版本：
 
-    go get gopkg.in/ini.v1
+    go get github.com/admpub/ini
 
 使用最新版：
 
@@ -29,7 +29,7 @@
 
 如果您想要在自己的机器上运行测试，请使用 `-t` 标记：
 
-	go get -t gopkg.in/ini.v1
+	go get -t github.com/admpub/ini
 
 如需更新请添加 `-u` 选项。
 
@@ -473,7 +473,7 @@ CLONE_URL = https://%(IMPORT_PATH)s
 ```
 
 ```go
-cfg.Section("package.sub").Key("CLONE_URL").String()	// https://gopkg.in/ini.v1
+cfg.Section("package.sub").Key("CLONE_URL").String()	// https://github.com/admpub/ini
 ```
 
 #### 获取上级父分区下的所有键名
@@ -623,7 +623,7 @@ places = HangZhou,Boston
 
 #### 名称映射器（Name Mapper）
 
-为了节省您的时间并简化代码，本库支持类型为 [`NameMapper`](https://gowalker.org/gopkg.in/ini.v1#NameMapper) 的名称映射器，该映射器负责结构字段名与分区名和键名之间的映射。
+为了节省您的时间并简化代码，本库支持类型为 [`NameMapper`](https://gowalker.org/github.com/admpub/ini#NameMapper) 的名称映射器，该映射器负责结构字段名与分区名和键名之间的映射。
 
 目前有 2 款内置的映射器：
 
@@ -734,7 +734,7 @@ Age = 21
 
 ## 获取帮助
 
-- [API 文档](https://gowalker.org/gopkg.in/ini.v1)
+- [API 文档](https://gowalker.org/github.com/admpub/ini)
 - [创建工单](https://github.com/go-ini/ini/issues/new)
 
 ## 常见问题

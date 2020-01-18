@@ -16,7 +16,7 @@ package cache
 
 import (
 	"fmt"
-	"gopkg.in/ini.v1"
+	"github.com/admpub/ini"
 )
 
 const _VERSION = "0.0.1"
