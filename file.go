@@ -180,7 +180,7 @@ func (c *FileCacher) startGC() {
 
 		data, err := ioutil.ReadFile(path)
 		if err != nil && !os.IsNotExist(err) {
-			fmt.Errorf("ReadFile: %v", err)
+			return fmt.Errorf("ReadFile: %v", err)
 		}
 
 		item := &Item{}
