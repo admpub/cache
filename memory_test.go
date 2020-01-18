@@ -38,4 +38,5 @@ func Test_MemoryCacher2(t *testing.T) {
 	err = c.Put(`exists`, `exists`, 86400)
 	assert.NoError(t, err)
 	assert.Equal(t, `exists`, c.String(`exists`))
+	assert.Equal(t, `exists`, c.Any(`exists`))
 }

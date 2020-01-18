@@ -17,6 +17,8 @@ package cache
 import (
 	"fmt"
 
+	"github.com/webx-top/echo/param"
+
 	"github.com/admpub/cache/encoding"
 	"github.com/admpub/cache/encoding/msgpack"
 	"github.com/admpub/ini"
@@ -52,24 +54,19 @@ type Cache interface {
 
 type Getter interface {
 	String(key string) string
-
 	Int(key string) int
-
 	Uint(key string) uint
-
 	Int64(key string) int64
-
 	Uint64(key string) uint64
-
 	Int32(key string) int32
-
 	Uint32(key string) uint32
-
 	Float32(key string) float32
-
 	Float64(key string) float64
-
 	Bytes(key string) []byte
+	Map(key string) map[string]interface{}
+	Any(key string) interface{}
+	Mapx(key string) param.Store
+	Slice(key string) []interface{}
 }
 
 var DefaultCodec encoding.Codec = msgpack.MsgPack

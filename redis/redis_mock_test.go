@@ -29,6 +29,7 @@ func TestCache(t *testing.T) {
 		err = c.Get("exists", &value)
 		assert.NoError(t, err)
 		assert.Equal(t, "exists", value)
+		assert.Equal(t, "exists", c.Any("exists"))
 	} else {
 		panic(err)
 	}
