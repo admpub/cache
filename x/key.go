@@ -26,7 +26,7 @@ func CreateKey(prefix bool, sep string, visual string, args ...interface{}) stri
 		output = fmt.Sprintf("%s_%s_%d_", details.Name(), file, line)
 	}
 
-	if sep == "" {
+	if len(sep) == 0 {
 		output = output + fmt.Sprint(args...)
 	} else {
 		for i, v := range args {
@@ -65,7 +65,7 @@ func CreateKeyStruct(strct interface{}) string {
 	for i := 0; i < s.NumField(); i++ {
 		f := typeOfT.Field(i)
 
-		if f.PkgPath != "" {
+		if len(f.PkgPath) > 0 {
 			// Not exported
 			continue
 		}
@@ -85,7 +85,7 @@ func CreateKeyStruct(strct interface{}) string {
 			continue
 		}
 
-		if fieldTag == "" {
+		if len(fieldTag) == 0 {
 			out[fieldName] = fieldVal
 		} else {
 			out[strings.TrimSuffix(fieldTag, ",omitempty")] = fieldVal

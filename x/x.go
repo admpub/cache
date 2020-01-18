@@ -56,7 +56,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
-		return querier.Query(key, value)
+		return querier.Query(value)
 	}
 	var (
 		ttl int64
@@ -72,7 +72,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
-		err = querier.Query(key, value)
+		err = querier.Query(value)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	if loaded {
 		return sentinel.Wait(value)
 	}
-	err = querier.Query(key, value)
+	err = querier.Query(value)
 	if err != nil && c.useStale && staled != nil {
 		// 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
 		reflect.ValueOf(value).Elem().Set(reflect.ValueOf(staled))
