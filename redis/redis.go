@@ -20,7 +20,7 @@ import (
 	"time"
 
 	"github.com/webx-top/com"
-	"gopkg.in/redis.v2"
+	"gopkg.in/redis.v5"
 
 	"github.com/admpub/cache"
 	"github.com/admpub/cache/encoding"
@@ -49,16 +49,9 @@ func (c *RedisCacher) Put(key string, val interface{}, expire int64) error {
 	if err != nil {
 		return err
 	}
-	if expire == 0 {
-		if err := c.c.Set(key, com.Bytes2str(value)).Err(); err != nil {
-			return err
-		}
-	} else {
-		if err := c.c.SetEx(key, time.Duration(expire)*time.Second, com.Bytes2str(value)).Err(); err != nil {
-			return err
-		}
+	if err := c.c.Set(key, com.Bytes2str(value), time.Duration(expire)*time.Second).Err(); err != nil {
+		return err
 	}
-
 	if c.occupyMode {
 		return nil
 	}
@@ -161,7 +154,7 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 		case "password":
 			opt.Password = v
 		case "db":
-			opt.DB = com.StrTo(v).MustInt64()
+			opt.DB = com.StrTo(v).MustInt()
 		case "pool_size":
 			opt.PoolSize = com.StrTo(v).MustInt()
 		case "idle_timeout":
