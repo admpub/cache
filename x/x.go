@@ -47,12 +47,18 @@ func (c *Cachex) Get(key string, value interface{}, opts ...GetOption) error {
 	return c.get(key, value, options)
 }
 
+const (
+	Disabled = -1
+	Fresh = -2
+)
+
+// get ttl:-1 不用缓存; ttl:-2 强制更新缓存
 func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	querier := c.querier
 	if options.querier != nil {
 		querier = options.querier
 	}
-	if options.disableCacheUsage {
+	if options.ttl == Disabled || options.disableCacheUsage {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
@@ -68,7 +74,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	if ttl == 0 {
 		ttl = c.defaultTTL
 	}
-	if options.useFreshData {
+	if ttl == Fresh || options.useFreshData {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
