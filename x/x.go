@@ -113,18 +113,15 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	err = c.storage.Get(key, value)
 	switch err {
 	case nil:
-		if !loaded {
-			// 将结果通知等待的过程
+		if !loaded { // 将结果通知等待的过程
 			sentinel.Done(reflect.ValueOf(value).Elem().Interface(), nil)
 		}
 		return nil
 	case cache.ErrNotFound: // 下面查询
-	case cache.ErrExpired:
-		// 保存过期数据，如果下面查询失败，且useStale，返回过期数据
+	case cache.ErrExpired: // 保存过期数据，如果下面查询失败，且useStale，返回过期数据
 		staled = reflect.ValueOf(value).Elem().Interface()
 	default:
-		if !loaded {
-			// 将错误通知等待的过程
+		if !loaded { // 将错误通知等待的过程
 			sentinel.Done(nil, err)
 		}
 		return err
