@@ -24,7 +24,7 @@ var DefaultTTL int64 = 86400 * 10 * 366
 func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
 	c = &Cachex{
 		storage:    storage,
-		querier:    querier,
+		querier: 	querier,
 		defaultTTL: DefaultTTL,
 	}
 	if len(defaultTTL) > 0 {
@@ -62,7 +62,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
-		return querier.Query(value)
+		return querier.Query()
 	}
 	var (
 		ttl int64
@@ -78,7 +78,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
-		err = querier.Query(value)
+		err = querier.Query()
 		if err != nil {
 			return err
 		}
@@ -130,7 +130,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	if loaded {
 		return sentinel.Wait(value)
 	}
-	err = querier.Query(value)
+	err = querier.Query()
 	if err != nil && c.useStale && staled != nil {
 		// 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
 		reflect.ValueOf(value).Elem().Set(reflect.ValueOf(staled))
