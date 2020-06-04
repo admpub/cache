@@ -34,6 +34,7 @@ func Test_MemoryCacher2(t *testing.T) {
 		Adapter:  `memory`,
 		Interval: 2,
 	})
+	defer c.Close()
 	assert.NoError(t, err)
 	err = c.Put(`exists`, `exists`, 86400)
 	assert.NoError(t, err)
