@@ -190,8 +190,12 @@ func (c *RedisCacher) Close() error {
 	return c.c.Close()
 }
 
-func (c *RedisCacher) Client() *redis.Client {
+func (c *RedisCacher) Client() interface{} {
 	return c.c
+}
+
+func AsClient(client interface{}) *redis.Client {
+	return client.(*redis.Client)
 }
 
 func New() cache.Cache {

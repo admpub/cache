@@ -110,6 +110,14 @@ func (c *MemcacheCacher) Close() error {
 	return nil
 }
 
+func (c *MemcacheCacher) Client() interface{} {
+	return c.c
+}
+
+func AsClient(client interface{}) *memcache.Client {
+	return client.(*memcache.Client)
+}
+
 func New() cache.Cache {
 	c := &MemcacheCacher{codec: cache.DefaultCodec}
 	c.GetAs = cache.GetAs{Cache: c}

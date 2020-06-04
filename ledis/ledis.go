@@ -143,7 +143,7 @@ func (c *LedisCacher) startGC() {
 
 	kvs, err := c.c.HGetAll(defaultHSetName)
 	if err != nil {
-		log.Printf("cache/redis: error garbage collecting(get): %v", err)
+		log.Printf("cache/ledis: error garbage collecting(get): %v", err)
 		return
 	}
 
@@ -155,7 +155,7 @@ func (c *LedisCacher) startGC() {
 		}
 
 		if err = c.Delete(string(v.Field)); err != nil {
-			log.Printf("cache/redis: error garbage collecting(delete): %v", err)
+			log.Printf("cache/ledis: error garbage collecting(delete): %v", err)
 			continue
 		}
 	}
@@ -182,13 +182,13 @@ func (c *LedisCacher) StartAndGC(opts cache.Options) error {
 		case "db":
 			db = com.StrTo(v).MustInt()
 		default:
-			return fmt.Errorf("session/ledis: unsupported option '%s'", k)
+			return fmt.Errorf("cache/ledis: unsupported option '%s'", k)
 		}
 	}
 
 	l, err := ledis.Open(opt)
 	if err != nil {
-		return fmt.Errorf("session/ledis: error opening db: %v", err)
+		return fmt.Errorf("cache/ledis: error opening db: %v", err)
 	}
 	c.c, err = l.Select(db)
 	if err != nil {
@@ -205,6 +205,14 @@ func (c *LedisCacher) Close() error {
 		return nil
 	}
 	return c.c.Close()
+}
+
+func (c *LedisCacher) Client() interface{} {
+	return c.c
+}
+
+func AsClient(client interface{}) *ledis.DB {
+	return client.(*ledis.DB)
 }
 
 func New() cache.Cache {

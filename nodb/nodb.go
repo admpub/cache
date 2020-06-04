@@ -153,6 +153,14 @@ func (c *NodbCacher) Close() error {
 	return nil
 }
 
+func (c *NodbCacher) Client() interface{} {
+	return c.dbs
+}
+
+func AsClient(client interface{}) *nodb.Nodb {
+	return client.(*nodb.Nodb)
+}
+
 func New() cache.Cache {
 	c := &NodbCacher{codec: cache.DefaultCodec}
 	c.GetAs = cache.GetAs{Cache: c}

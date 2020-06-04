@@ -49,6 +49,7 @@ type Cache interface {
 	// StartAndGC starts GC routine based on config string settings.
 	StartAndGC(opt Options) error
 	Close() error
+	Client() interface{}
 	Codec
 	Getter
 }

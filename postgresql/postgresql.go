@@ -200,6 +200,14 @@ func (c *PostgresCacher) Close() error {
 	return c.c.Close()
 }
 
+func (c *PostgresCacher) Client() interface{} {
+	return c.c
+}
+
+func AsClient(client interface{}) *sql.DB {
+	return client.(*sql.DB)
+}
+
 func init() {
 	cache.Register("postgres", New())
 }

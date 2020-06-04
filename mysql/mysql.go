@@ -200,6 +200,14 @@ func (c *MysqlCacher) Close() error {
 	return c.c.Close()
 }
 
+func (c *MysqlCacher) Client() interface{} {
+	return c.c
+}
+
+func AsClient(client interface{}) *sql.DB {
+	return client.(*sql.DB)
+}
+
 func init() {
 	cache.Register("mysql", New())
 }
