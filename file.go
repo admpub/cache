@@ -228,6 +228,10 @@ func (c *FileCacher) Close() error {
 	return nil
 }
 
+func (c *FileCacher) Client() interface{} {
+	return nil
+}
+
 func init() {
 	Register("file", NewFileCacher())
 }

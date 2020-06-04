@@ -193,6 +193,10 @@ func (c *MemoryCacher) Close() error {
 	return c.Flush()
 }
 
+func (c *MemoryCacher) Client() interface{} {
+	return nil
+}
+
 func init() {
 	Register("memory", NewMemoryCacher())
 }

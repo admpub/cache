@@ -58,7 +58,7 @@ func Test_Cacher(t *testing.T) {
 				So(recover(), ShouldNotBeNil)
 			}()
 
-			Register("memory", &MemoryCacher{})
+			Register("memory", NewMemoryCacher())
 		})
 	})
 }
