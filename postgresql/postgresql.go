@@ -46,6 +46,10 @@ func (c *PostgresCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
 }
 
+func (c *PostgresCacher) Codec() encoding.Codec {
+	return c.codec
+}
+
 func (c *PostgresCacher) md5(key string) string {
 	m := md5.Sum([]byte(key))
 	return hex.EncodeToString(m[:])

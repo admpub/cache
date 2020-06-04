@@ -19,8 +19,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/admpub/copier"
 	"github.com/admpub/cache/encoding"
+	"github.com/admpub/copier"
 )
 
 // MemoryItem represents a memory cache item.
@@ -53,6 +53,10 @@ func NewMemoryCacher() Cache {
 
 func (c *MemoryCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
+}
+
+func (c *MemoryCacher) Codec() encoding.Codec {
+	return c.codec
 }
 
 // Put puts value into cache with key and expire time.

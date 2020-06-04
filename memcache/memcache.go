@@ -42,6 +42,10 @@ func (c *MemcacheCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
 }
 
+func (c *MemcacheCacher) Codec() encoding.Codec {
+	return c.codec
+}
+
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *MemcacheCacher) Put(key string, val interface{}, expire int64) error {

@@ -43,6 +43,10 @@ func (c *LedisCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
 }
 
+func (c *LedisCacher) Codec() encoding.Codec {
+	return c.codec
+}
+
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *LedisCacher) Put(key string, val interface{}, expire int64) (err error) {

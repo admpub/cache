@@ -62,6 +62,10 @@ func (c *FileCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
 }
 
+func (c *FileCacher) Codec() encoding.Codec {
+	return c.codec
+}
+
 func (c *FileCacher) filepath(key string) string {
 	m := md5.Sum([]byte(key))
 	hash := hex.EncodeToString(m[:])

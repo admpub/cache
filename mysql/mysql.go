@@ -46,6 +46,10 @@ func (c *MysqlCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
 }
 
+func (c *MysqlCacher) Codec() encoding.Codec {
+	return c.codec
+}
+
 func (c *MysqlCacher) md5(key string) string {
 	m := md5.Sum([]byte(key))
 	return hex.EncodeToString(m[:])

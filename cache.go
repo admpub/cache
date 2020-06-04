@@ -49,7 +49,7 @@ type Cache interface {
 	// StartAndGC starts GC routine based on config string settings.
 	StartAndGC(opt Options) error
 	Close() error
-	SetCodec
+	Codec
 	Getter
 }
 
@@ -72,8 +72,9 @@ type Getter interface {
 
 var DefaultCodec encoding.Codec = msgpack.MsgPack
 
-type SetCodec interface {
+type Codec interface {
 	SetCodec(encoding.Codec)
+	Codec() encoding.Codec
 }
 
 // Options represents a struct for specifying configuration options for the cache middleware.

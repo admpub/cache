@@ -41,6 +41,10 @@ func (c *RedisCacher) SetCodec(codec encoding.Codec) {
 	c.codec = codec
 }
 
+func (c *RedisCacher) Codec() encoding.Codec {
+	return c.codec
+}
+
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
 func (c *RedisCacher) Put(key string, val interface{}, expire int64) error {
@@ -184,6 +188,10 @@ func (c *RedisCacher) Close() error {
 		return nil
 	}
 	return c.c.Close()
+}
+
+func (c *RedisCacher) Client() *redis.Client {
+	return c.c
 }
 
 func New() cache.Cache {
