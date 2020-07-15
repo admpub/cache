@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/siddontang/ledisdb/config"
-	"github.com/siddontang/ledisdb/ledis"
+	"github.com/ledisdb/ledisdb/config"
+	"github.com/ledisdb/ledisdb/ledis"
 	"github.com/webx-top/com"
 
 	"github.com/admpub/cache"

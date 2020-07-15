@@ -49,4 +49,6 @@ func TestCache(t *testing.T) {
 	var value string
 	err = c.Get("non-exists", &value)
 	assert.Equal(t, cache.ErrNotFound, err)
+	assert.Equal(t, false, c.IsExist("non-exists"))
+	assert.Equal(t, true, c.IsExist("exists"))
 }

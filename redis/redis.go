@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
+	redis "github.com/go-redis/redis/v7"
 	"github.com/webx-top/com"
-	"gopkg.in/redis.v5"
 
 	"github.com/admpub/cache"
 	"github.com/admpub/cache/encoding"
@@ -109,7 +109,7 @@ func (c *RedisCacher) Decr(key string) error {
 
 // IsExist returns true if cached value exists.
 func (c *RedisCacher) IsExist(key string) bool {
-	if c.c.Exists(c.prefix + key).Val() {
+	if c.c.Exists(c.prefix+key).Val() > 0 {
 		return true
 	}
 
@@ -122,7 +122,7 @@ func (c *RedisCacher) IsExist(key string) bool {
 // Flush deletes all cached data.
 func (c *RedisCacher) Flush() error {
 	if c.occupyMode {
-		return c.c.FlushDb().Err()
+		return c.c.FlushDB().Err()
 	}
 
 	keys, err := c.c.HKeys(c.hsetName).Result()
