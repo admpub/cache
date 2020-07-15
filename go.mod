@@ -22,11 +22,11 @@ require (
 	github.com/mattn/go-colorable v0.1.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.0 // indirect
 	github.com/siddontang/go-snappy v0.0.0-20140704025258-d8f7bb82a96d // indirect
-	github.com/smartystreets/goconvey v1.6.4
 	github.com/stretchr/testify v1.6.1
 	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	github.com/webx-top/com v0.0.0-20200702040344-4905fac65565
 	github.com/webx-top/echo v2.1.5+incompatible
 	google.golang.org/appengine v1.6.6 // indirect
 	gopkg.in/ini.v1 v1.57.0 // indirect
+	gopkg.in/redis.v5 v5.2.9
 )
