@@ -24,7 +24,7 @@ var DefaultTTL int64 = 86400 * 10 * 366
 func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
 	c = &Cachex{
 		storage:    storage,
-		querier: 	querier,
+		querier:    querier,
 		defaultTTL: DefaultTTL,
 	}
 	if len(defaultTTL) > 0 {
@@ -48,8 +48,8 @@ func (c *Cachex) Get(key string, value interface{}, opts ...GetOption) error {
 }
 
 const (
-	Disabled = -1
-	Fresh = -2
+	Disabled int64 = -1
+	Fresh    int64 = -2
 )
 
 // get ttl:-1 不用缓存; ttl:-2 强制更新缓存
