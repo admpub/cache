@@ -32,6 +32,7 @@ type RedisCacher struct {
 	cache.GetAs
 	codec      encoding.Codec
 	c          *redis.Client
+	options    *redis.Options
 	prefix     string
 	hsetName   string
 	occupyMode bool
@@ -146,23 +147,23 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 		return err
 	}
 
-	opt := &redis.Options{
+	c.options = &redis.Options{
 		Network: "tcp",
 	}
 	for k, v := range cfg.Section("").KeysHash() {
 		switch k {
 		case "network":
-			opt.Network = v
+			c.options.Network = v
 		case "addr":
-			opt.Addr = v
+			c.options.Addr = v
 		case "password":
-			opt.Password = v
+			c.options.Password = v
 		case "db":
-			opt.DB = com.StrTo(v).MustInt()
+			c.options.DB = com.StrTo(v).MustInt()
 		case "pool_size":
-			opt.PoolSize = com.StrTo(v).MustInt()
+			c.options.PoolSize = com.StrTo(v).MustInt()
 		case "idle_timeout":
-			opt.IdleTimeout, err = time.ParseDuration(v + "s")
+			c.options.IdleTimeout, err = time.ParseDuration(v + "s")
 			if err != nil {
 				return fmt.Errorf("error parsing idle timeout: %v", err)
 			}
@@ -175,7 +176,7 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 		}
 	}
 
-	c.c = redis.NewClient(opt)
+	c.c = redis.NewClient(c.options)
 	if err = c.c.Ping().Err(); err != nil {
 		return err
 	}
@@ -192,6 +193,10 @@ func (c *RedisCacher) Close() error {
 
 func (c *RedisCacher) Client() interface{} {
 	return c.c
+}
+
+func (c *RedisCacher) Options() *redis.Options {
+	return c.options
 }
 
 func AsClient(client interface{}) *redis.Client {
