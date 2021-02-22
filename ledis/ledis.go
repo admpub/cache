@@ -210,11 +210,11 @@ func (c *LedisCacher) Close() error {
 }
 
 func (c *LedisCacher) Client() interface{} {
-	return c.db
+	return c.c
 }
 
-func AsClient(client interface{}) *ledis.DB {
-	return client.(*ledis.DB)
+func AsClient(client interface{}) *ledis.Ledis {
+	return client.(*ledis.Ledis)
 }
 
 func New() cache.Cache {
