@@ -35,7 +35,8 @@ var defaultHSetName = []byte("Cache")
 type LedisCacher struct {
 	cache.GetAs
 	codec    encoding.Codec
-	c        *ledis.DB
+	c        *ledis.Ledis
+	db       *ledis.DB
 	interval int
 }
 
@@ -56,23 +57,23 @@ func (c *LedisCacher) Put(key string, val interface{}, expire int64) (err error)
 	}
 	kBytes := []byte(key)
 	if expire == 0 {
-		if err = c.c.Set(kBytes, value); err != nil {
+		if err = c.db.Set(kBytes, value); err != nil {
 			return err
 		}
-		_, err = c.c.HSet(kBytes, defaultHSetName, []byte("0"))
+		_, err = c.db.HSet(kBytes, defaultHSetName, []byte("0"))
 		return err
 	}
 
-	if err = c.c.SetEX(kBytes, expire, value); err != nil {
+	if err = c.db.SetEX(kBytes, expire, value); err != nil {
 		return err
 	}
-	_, err = c.c.HSet(kBytes, defaultHSetName, []byte(com.ToStr(time.Now().Add(time.Duration(expire)*time.Second).Unix())))
+	_, err = c.db.HSet(kBytes, defaultHSetName, []byte(com.ToStr(time.Now().Add(time.Duration(expire)*time.Second).Unix())))
 	return err
 }
 
 // Get gets cached value by given key.
 func (c *LedisCacher) Get(key string, value interface{}) error {
-	val, err := c.c.Get([]byte(key))
+	val, err := c.db.Get([]byte(key))
 	if err != nil {
 		return err
 	}
@@ -84,10 +85,10 @@ func (c *LedisCacher) Get(key string, value interface{}) error {
 
 // Delete deletes cached value by given key.
 func (c *LedisCacher) Delete(key string) (err error) {
-	if _, err = c.c.Del([]byte(key)); err != nil {
+	if _, err = c.db.Del([]byte(key)); err != nil {
 		return err
 	}
-	_, err = c.c.HDel(defaultHSetName, []byte(key))
+	_, err = c.db.HDel(defaultHSetName, []byte(key))
 	return err
 }
 
@@ -96,7 +97,7 @@ func (c *LedisCacher) Incr(key string) error {
 	if !c.IsExist(key) {
 		return fmt.Errorf("key '%s' not exist", key)
 	}
-	_, err := c.c.Incr([]byte(key))
+	_, err := c.db.Incr([]byte(key))
 	return err
 }
 
@@ -105,24 +106,24 @@ func (c *LedisCacher) Decr(key string) error {
 	if !c.IsExist(key) {
 		return fmt.Errorf("key '%s' not exist", key)
 	}
-	_, err := c.c.Decr([]byte(key))
+	_, err := c.db.Decr([]byte(key))
 	return err
 }
 
 // IsExist returns true if cached value exists.
 func (c *LedisCacher) IsExist(key string) bool {
-	count, err := c.c.Exists([]byte(key))
+	count, err := c.db.Exists([]byte(key))
 	if err == nil && count > 0 {
 		return true
 	}
-	c.c.HDel(defaultHSetName, []byte(key))
+	c.db.HDel(defaultHSetName, []byte(key))
 	return false
 }
 
 // Flush deletes all cached data.
 func (c *LedisCacher) Flush() error {
 	// FIXME: there must be something wrong, shouldn't use this one.
-	_, err := c.c.FlushAll()
+	_, err := c.db.FlushAll()
 	return err
 
 	// keys, err := c.c.HKeys(defaultHSetName)
@@ -141,7 +142,7 @@ func (c *LedisCacher) startGC() {
 		return
 	}
 
-	kvs, err := c.c.HGetAll(defaultHSetName)
+	kvs, err := c.db.HGetAll(defaultHSetName)
 	if err != nil {
 		log.Printf("cache/ledis: error garbage collecting(get): %v", err)
 		return
@@ -186,11 +187,11 @@ func (c *LedisCacher) StartAndGC(opts cache.Options) error {
 		}
 	}
 
-	l, err := ledis.Open(opt)
+	c.c, err = ledis.Open(opt)
 	if err != nil {
 		return fmt.Errorf("cache/ledis: error opening db: %v", err)
 	}
-	c.c, err = l.Select(db)
+	c.db, err = c.c.Select(db)
 	if err != nil {
 		return err
 	}
@@ -204,11 +205,12 @@ func (c *LedisCacher) Close() error {
 	if c.c == nil {
 		return nil
 	}
-	return c.c.Close()
+	c.c.Close()
+	return nil
 }
 
 func (c *LedisCacher) Client() interface{} {
-	return c.c
+	return c.db
 }
 
 func AsClient(client interface{}) *ledis.DB {
