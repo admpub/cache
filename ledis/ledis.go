@@ -150,7 +150,7 @@ func (c *LedisCacher) startGC() {
 
 	now := time.Now().Unix()
 	for _, v := range kvs {
-		expire := com.StrTo(v.Value).MustInt64()
+		expire := com.Int64(v.Value)
 		if expire == 0 || now < expire {
 			continue
 		}
@@ -181,7 +181,7 @@ func (c *LedisCacher) StartAndGC(opts cache.Options) error {
 		case "data_dir":
 			opt.DataDir = v
 		case "db":
-			db = com.StrTo(v).MustInt()
+			db = com.Int(v)
 		default:
 			return fmt.Errorf("cache/ledis: unsupported option '%s'", k)
 		}

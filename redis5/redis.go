@@ -159,9 +159,9 @@ func (c *RedisCacher) StartAndGC(opts cache.Options) error {
 		case "password":
 			c.options.Password = v
 		case "db":
-			c.options.DB = com.StrTo(v).MustInt()
+			c.options.DB = com.Int(v)
 		case "pool_size":
-			c.options.PoolSize = com.StrTo(v).MustInt()
+			c.options.PoolSize = com.Int(v)
 		case "idle_timeout":
 			c.options.IdleTimeout, err = time.ParseDuration(v + "s")
 			if err != nil {
