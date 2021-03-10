@@ -1,11 +1,11 @@
 package json
 
 import (
-	"encoding/json"
-
 	"github.com/admpub/cache/encoding"
+	"github.com/webx-top/com/encoding/json"
 )
 
+// JSON default JSON codec
 var JSON encoding.Codec = &jsonx{}
 
 type jsonx struct {

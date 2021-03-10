@@ -7,6 +7,7 @@ import (
 	"github.com/admpub/cache/encoding"
 )
 
+// GOB default GOB codec
 var GOB encoding.Codec = &gobx{}
 
 type gobx struct {

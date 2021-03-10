@@ -1,11 +1,12 @@
 package msgpack
 
 import (
-	"github.com/vmihailenco/msgpack"
+	"github.com/shamaton/msgpack/v2"
 
 	"github.com/admpub/cache/encoding"
 )
 
+// MsgPack default MsgPack codec
 var MsgPack encoding.Codec = &msgPack{}
 
 type msgPack struct {
