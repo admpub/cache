@@ -13,6 +13,7 @@ require (
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/goccy/go-json v0.4.7 // indirect
 	github.com/golang/protobuf v1.4.3 // indirect
 	github.com/golang/snappy v0.0.2 // indirect
 	github.com/google/go-cmp v0.5.4 // indirect
@@ -35,8 +36,8 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	github.com/webx-top/com v0.0.7
-	github.com/webx-top/echo v2.7.6+incompatible
+	github.com/webx-top/com v0.1.1
+	github.com/webx-top/echo v2.8.2+incompatible
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
 	golang.org/x/net v0.0.0-20210220033124-5f55cee0dc0d // indirect
 	golang.org/x/sys v0.0.0-20210220050731-9a76102bfb43 // indirect
