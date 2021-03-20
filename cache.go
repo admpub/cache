@@ -20,7 +20,7 @@ import (
 	"github.com/webx-top/echo/param"
 
 	"github.com/admpub/cache/encoding"
-	"github.com/admpub/cache/encoding/msgpack"
+	"github.com/admpub/cache/encoding/json"
 	"github.com/admpub/ini"
 )
 
@@ -71,7 +71,7 @@ type Getter interface {
 	Slice(key string) []interface{}
 }
 
-var DefaultCodec encoding.Codec = msgpack.MsgPack
+var DefaultCodec encoding.Codec = json.JSON
 
 type Codec interface {
 	SetCodec(encoding.Codec)
