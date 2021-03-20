@@ -29,7 +29,6 @@ require (
 	github.com/onsi/ginkgo v1.15.0 // indirect
 	github.com/onsi/gomega v1.10.5 // indirect
 	github.com/pelletier/go-toml v1.8.1 // indirect
-	github.com/shamaton/msgpack v1.2.1
 	github.com/siddontang/go v0.0.0-20180604090527-bdc77568d726 // indirect
 	github.com/siddontang/go-snappy v0.0.0-20140704025258-d8f7bb82a96d // indirect
 	github.com/smartystreets/assertions v1.2.0 // indirect
