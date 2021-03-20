@@ -209,11 +209,12 @@ func (c *FileCacher) StartAndGC(opt Options) error {
 	c.lock.Lock()
 	c.rootPath = opt.AdapterConfig
 	c.interval = opt.Interval
-
-	if !filepath.IsAbs(c.rootPath) {
-		c.rootPath = filepath.Join("/", c.rootPath)
-	}
+	var err error
+	c.rootPath, err = filepath.Abs(c.rootPath)
 	c.lock.Unlock()
+	if err != nil {
+		return err
+	}
 
 	if err := os.MkdirAll(c.rootPath, os.ModePerm); err != nil {
 		return err
