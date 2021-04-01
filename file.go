@@ -175,7 +175,7 @@ func (c *FileCacher) startGC() {
 
 	if err := filepath.Walk(c.rootPath, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
-			return fmt.Errorf("Walk: %v", err)
+			return fmt.Errorf("walk: %v", err)
 		}
 
 		if fi.IsDir() {
@@ -189,11 +189,15 @@ func (c *FileCacher) startGC() {
 
 		item := &Item{}
 		if err = c.codec.Unmarshal(data, item); err != nil {
-			return err
+			log.Printf("error garbage collecting cache files: unmarshal: %v", err)
+			if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
+				return fmt.Errorf("remove: %v", err)
+			}
+			return nil
 		}
 		if item.hasExpired() {
 			if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
-				return fmt.Errorf("Remove: %v", err)
+				return fmt.Errorf("remove: %v", err)
 			}
 		}
 		return nil
