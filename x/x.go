@@ -2,16 +2,17 @@ package x
 
 import (
 	"reflect"
-	"sync"
 
 	"github.com/admpub/cache"
+	"github.com/admpub/copier"
+	"golang.org/x/sync/singleflight"
 )
 
 // Cachex 缓存处理类
 type Cachex struct {
-	storage   cache.Cache
-	querier   Querier
-	sentinels sync.Map
+	storage cache.Cache
+	querier Querier
+	sg      singleflight.Group
 
 	// useStale UseStaleWhenError
 	useStale   bool
@@ -90,65 +91,41 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	default:
 		return err
 	}
-
 	if querier == nil {
 		return cache.ErrNotFound
 	}
-
 	// 在一份实例中
 	// 不同时发起重复的查询请求——解决缓存失效风暴
-	newSentinel := NewSentinel()
-	actual, loaded := c.sentinels.LoadOrStore(key, newSentinel)
-	sentinel := actual.(*Sentinel)
-	if loaded {
-		newSentinel.Close()
-	} else {
-		// 确保生产者总是能发出通知，并解锁
-		defer c.sentinels.Delete(key)
-		defer sentinel.CloseIfUnclose()
-	}
-
-	// 双重检查
-	var staled interface{}
-	err = c.storage.Get(key, value)
-	switch err {
-	case nil:
-		if !loaded { // 将结果通知等待的过程
-			sentinel.Done(reflect.ValueOf(value).Elem().Interface(), nil)
+	getValue, getErr, _ := c.sg.Do(key, func() (interface{}, error) {
+		var staled interface{}
+		err := c.storage.Get(key, value)
+		if err == nil {
+			return value, err
 		}
-		return nil
-	case cache.ErrNotFound: // 下面查询
-	case cache.ErrExpired: // 保存过期数据，如果下面查询失败，且useStale，返回过期数据
-		staled = reflect.ValueOf(value).Elem().Interface()
-	default:
-		if !loaded { // 将错误通知等待的过程
-			sentinel.Done(nil, err)
+		switch err {
+		case cache.ErrNotFound: // 下面查询
+		case cache.ErrExpired: // 保存过期数据，如果下面查询失败，且useStale，返回过期数据
+			staled = reflect.ValueOf(value).Elem().Interface()
+		default:
+			return value, err
 		}
+		err = querier.Query()
+		if err != nil {
+			if c.useStale && staled != nil {
+				// 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
+				reflect.ValueOf(value).Elem().Set(reflect.ValueOf(staled))
+				return staled, err
+			}
+			return value, err
+		}
+		// 更新到存储后端
+		err = c.storage.Put(key, value, ttl)
+		return value, err
+	})
+	if getErr != nil {
 		return err
 	}
-
-	if loaded {
-		return sentinel.Wait(value)
-	}
-	err = querier.Query()
-	if err != nil && c.useStale && staled != nil {
-		// 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
-		reflect.ValueOf(value).Elem().Set(reflect.ValueOf(staled))
-		sentinel.Done(staled, err)
-		return err
-	}
-
-	if err != nil {
-		sentinel.Done(nil, err)
-		return err
-	}
-
-	// 更新到存储后端
-	//elem := reflect.ValueOf(value).Elem().Interface()
-	err = c.storage.Put(key, value, ttl)
-
-	sentinel.Done(value, nil)
-	return err
+	return copier.Copy(value, getValue)
 }
 
 // Set 更新
