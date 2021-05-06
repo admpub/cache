@@ -98,32 +98,35 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	// 不同时发起重复的查询请求——解决缓存失效风暴
 	getValue, getErr, _ := c.sg.Do(key, func() (interface{}, error) {
 		var staled interface{}
-		err := c.storage.Get(key, value)
-		if err == nil {
-			return value, err
+		dErr := c.storage.Get(key, value)
+		if dErr == nil {
+			return value, dErr
 		}
-		switch err {
+		switch dErr {
 		case cache.ErrNotFound: // 下面查询
 		case cache.ErrExpired: // 保存过期数据，如果下面查询失败，且useStale，返回过期数据
 			staled = reflect.ValueOf(value).Elem().Interface()
 		default:
-			return value, err
+			return value, dErr
 		}
-		err = querier.Query()
-		if err != nil {
+		dErr = querier.Query()
+		if dErr != nil {
 			if c.useStale && staled != nil {
 				// 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
 				reflect.ValueOf(value).Elem().Set(reflect.ValueOf(staled))
-				return staled, err
+				return staled, dErr
 			}
-			return value, err
+			return value, dErr
 		}
 		// 更新到存储后端
-		err = c.storage.Put(key, value, ttl)
-		return value, err
+		dErr = c.storage.Put(key, value, ttl)
+		return value, dErr
 	})
 	if getErr != nil {
 		return err
+	}
+	if getValue == value {
+		return nil
 	}
 	return copier.Copy(value, getValue)
 }
