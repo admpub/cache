@@ -16,6 +16,7 @@ package cache
 
 import (
 	"errors"
+	"reflect"
 	"sync"
 	"time"
 
@@ -65,8 +66,15 @@ func (c *MemoryCacher) Put(key string, val interface{}, expire int64) error {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
+	// 获取副本，避免被外部修改
+	value := reflect.New(reflect.Indirect(reflect.ValueOf(val)).Type()).Interface()
+	err := copier.Copy(value, val)
+	if err != nil {
+		return err
+	}
+
 	c.items[key] = &MemoryItem{
-		val:     val,
+		val:     value,
 		created: time.Now().Unix(),
 		expire:  expire,
 	}
