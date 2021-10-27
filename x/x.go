@@ -96,7 +96,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	}
 	// 在一份实例中
 	// 不同时发起重复的查询请求——解决缓存失效风暴
-	getValue, getErr, _ := c.sg.Do(key, func() (interface{}, error) {
+	getValue, getErr, shared := c.sg.Do(key, func() (interface{}, error) {
 		var staled interface{}
 		dErr := c.storage.Get(key, value)
 		if dErr == nil {
@@ -125,7 +125,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	if getErr != nil {
 		return err
 	}
-	if getValue == value {
+	if shared || getValue == value {
 		return nil
 	}
 	return copier.Copy(value, getValue)

@@ -65,7 +65,7 @@ func (c *RedisCacher) Put(key string, val interface{}, expire int64) error {
 
 // Get gets cached value by given key.
 func (c *RedisCacher) Get(key string, value interface{}) error {
-	val, err := c.c.Get(c.prefix + key).Result()
+	val, err := c.c.Get(c.prefix + key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return cache.ErrNotFound
@@ -76,7 +76,7 @@ func (c *RedisCacher) Get(key string, value interface{}) error {
 		return cache.ErrNotFound
 	}
 
-	return c.codec.Unmarshal(com.Str2bytes(val), value)
+	return c.codec.Unmarshal(val, value)
 }
 
 // Delete deletes cached value by given key.

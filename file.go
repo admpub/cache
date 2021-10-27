@@ -42,6 +42,12 @@ func (item *Item) hasExpired() bool {
 		(time.Now().Unix()-item.Created) >= item.Expire
 }
 
+func (item *Item) Reset() {
+	item.Val = nil
+	item.Created = 0
+	item.Expire = 0
+}
+
 // FileCacher represents a file cache adapter implementation.
 type FileCacher struct {
 	GetAs
@@ -173,6 +179,7 @@ func (c *FileCacher) startGC() {
 		return
 	}
 
+	item := &Item{}
 	if err := filepath.Walk(c.rootPath, func(path string, fi os.FileInfo, err error) error {
 		if err != nil {
 			return fmt.Errorf("walk: %v", err)
@@ -186,8 +193,7 @@ func (c *FileCacher) startGC() {
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("ReadFile: %v", err)
 		}
-
-		item := &Item{}
+		item.Reset()
 		if err = c.codec.Unmarshal(data, item); err != nil {
 			log.Printf("error garbage collecting cache files: unmarshal: %v", err)
 			if err = os.Remove(path); err != nil && !os.IsNotExist(err) {
