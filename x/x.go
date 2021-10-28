@@ -125,7 +125,7 @@ func (c *Cachex) get(key string, value interface{}, options getOptions) error {
 	if getErr != nil {
 		return err
 	}
-	if shared || getValue == value {
+	if !shared || getValue == value {
 		return nil
 	}
 	return copier.Copy(value, getValue)
