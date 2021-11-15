@@ -52,7 +52,7 @@ func (item *Item) Reset() {
 type FileCacher struct {
 	GetAs
 	codec    encoding.Codec
-	lock     sync.Mutex
+	lock     sync.RWMutex
 	rootPath string
 	interval int // GC interval.
 }
@@ -172,12 +172,12 @@ func (c *FileCacher) Flush() error {
 }
 
 func (c *FileCacher) startGC() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
+	c.lock.RLock()
 	if c.interval < 1 {
+		c.lock.RUnlock()
 		return
 	}
+	c.lock.RUnlock()
 
 	item := &Item{}
 	if err := filepath.Walk(c.rootPath, func(path string, fi os.FileInfo, err error) error {
@@ -235,7 +235,9 @@ func (c *FileCacher) StartAndGC(opt Options) error {
 }
 
 func (c *FileCacher) Close() error {
+	c.lock.Lock()
 	c.interval = 0
+	c.lock.Unlock()
 	return nil
 }
 

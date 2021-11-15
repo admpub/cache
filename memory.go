@@ -136,52 +136,56 @@ func (c *MemoryCacher) Decr(key string) (err error) {
 // IsExist returns true if cached value exists.
 func (c *MemoryCacher) IsExist(key string) bool {
 	c.lock.RLock()
-	defer c.lock.RUnlock()
-
 	_, ok := c.items[key]
+	c.lock.RUnlock()
 	return ok
 }
 
 // Flush deletes all cached data.
 func (c *MemoryCacher) Flush() error {
 	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	c.items = make(map[string]*MemoryItem)
+	c.lock.Unlock()
 	return nil
 }
 
 func (c *MemoryCacher) checkRawExpiration(key string) {
+	c.lock.RLock()
 	item, ok := c.items[key]
+	c.lock.RUnlock()
 	if !ok {
 		return
 	}
 
 	if item.hasExpired() {
+		c.lock.Lock()
 		delete(c.items, key)
+		c.lock.Unlock()
 	}
 }
 
 func (c *MemoryCacher) checkExpiration(key string) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	c.checkRawExpiration(key)
 }
 
 func (c *MemoryCacher) startGC() {
 	c.lock.Lock()
-	defer c.lock.Unlock()
-
 	if c.interval < 1 {
+		c.lock.Unlock()
 		return
 	}
-
 	if c.items != nil {
-		for key := range c.items {
-			c.checkRawExpiration(key)
+		for key, item := range c.items {
+			if item == nil {
+				continue
+			}
+
+			if item.hasExpired() {
+				delete(c.items, key)
+			}
 		}
 	}
+	c.lock.Unlock()
 
 	time.AfterFunc(time.Duration(c.interval)*time.Second, func() { c.startGC() })
 }
@@ -197,7 +201,9 @@ func (c *MemoryCacher) StartAndGC(opt Options) error {
 }
 
 func (c *MemoryCacher) Close() error {
+	c.lock.Lock()
 	c.interval = 0
+	c.lock.Unlock()
 	return c.Flush()
 }
 

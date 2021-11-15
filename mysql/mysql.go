@@ -184,7 +184,8 @@ func (c *MysqlCacher) StartAndGC(opt cache.Options) (err error) {
 	c.c, err = sql.Open("mysql", opt.AdapterConfig)
 	if err != nil {
 		return err
-	} else if err = c.c.Ping(); err != nil {
+	}
+	if err = c.c.Ping(); err != nil {
 		return err
 	}
 
