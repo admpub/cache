@@ -16,12 +16,31 @@ package cache
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/bradfitz/gomemcache/memcache"
 
 	"github.com/admpub/cache"
 	"github.com/admpub/cache/encoding"
 )
+
+var cacheItemPool = sync.Pool{
+	New: func() interface{} {
+		return &memcache.Item{}
+	},
+}
+
+func CacheItemPoolGet() *memcache.Item {
+	return cacheItemPool.Get().(*memcache.Item)
+}
+
+func CacheItemPoolRelease(item *memcache.Item) {
+	item.Key = ``
+	item.Value = nil
+	item.Expiration = 0
+	item.Flags = 0
+	cacheItemPool.Put(item)
+}
 
 // MemcacheCacher represents a memcache cache adapter implementation.
 type MemcacheCacher struct {
@@ -53,7 +72,13 @@ func (c *MemcacheCacher) Put(key string, val interface{}, expire int64) error {
 	if err != nil {
 		return err
 	}
-	return c.c.Set(NewItem(key, value, int32(expire)))
+	item := CacheItemPoolGet()
+	item.Key = key
+	item.Value = value
+	item.Expiration = int32(expire)
+	err = c.c.Set(item)
+	CacheItemPoolRelease(item)
+	return err
 }
 
 // Get gets cached value by given key.

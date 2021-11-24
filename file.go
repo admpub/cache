@@ -30,6 +30,21 @@ import (
 	"github.com/admpub/cache/encoding"
 )
 
+var cacheItemPool = sync.Pool{
+	New: func() interface{} {
+		return &Item{}
+	},
+}
+
+func CacheItemPoolGet() *Item {
+	return cacheItemPool.Get().(*Item)
+}
+
+func CacheItemPoolRelease(item *Item) {
+	item.Reset()
+	cacheItemPool.Put(item)
+}
+
 // Item represents a cache item.
 type Item struct {
 	Val     interface{}
@@ -82,8 +97,14 @@ func (c *FileCacher) filepath(key string) string {
 // If expired is 0, it will be deleted by next GC operation.
 func (c *FileCacher) Put(key string, val interface{}, expire int64) error {
 	filename := c.filepath(key)
-	item := &Item{val, time.Now().Unix(), expire}
+
+	item := CacheItemPoolGet()
+	item.Val = val
+	item.Created = time.Now().Unix()
+	item.Expire = expire
+
 	data, err := c.codec.Marshal(item)
+	CacheItemPoolRelease(item)
 	if err != nil {
 		return err
 	}
@@ -103,13 +124,18 @@ func (c *FileCacher) read(key string, value interface{}) (*Item, error) {
 		return nil, err
 	}
 
-	item := &Item{Val: value}
+	item := CacheItemPoolGet()
+	item.Val = value
+
 	return item, c.codec.Unmarshal(data, item)
 }
 
 // Get gets cached value by given key.
 func (c *FileCacher) Get(key string, value interface{}) error {
 	item, err := c.read(key, value)
+	if item != nil {
+		defer CacheItemPoolRelease(item)
+	}
 	if err != nil {
 		return err
 	}
@@ -133,6 +159,9 @@ func (c *FileCacher) Delete(key string) error {
 func (c *FileCacher) Incr(key string) error {
 	var i int64
 	item, err := c.read(key, &i)
+	if item != nil {
+		defer CacheItemPoolRelease(item)
+	}
 	if err != nil {
 		return err
 	}
@@ -149,6 +178,9 @@ func (c *FileCacher) Incr(key string) error {
 func (c *FileCacher) Decr(key string) error {
 	var i int64
 	item, err := c.read(key, &i)
+	if item != nil {
+		defer CacheItemPoolRelease(item)
+	}
 	if err != nil {
 		return err
 	}

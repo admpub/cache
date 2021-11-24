@@ -46,6 +46,9 @@ func TestFile(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, wrap, recv2)
 
+	wrap = &Wrap{
+		K: `test`, V: 100, X: data,
+	}
 	wraps := []*Wrap{wrap}
 	err = c.Put("testkey3", wraps, 86400)
 	assert.Nil(t, err)

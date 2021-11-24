@@ -58,8 +58,10 @@ func (c *MysqlCacher) md5(key string) string {
 // Put puts value into cache with key and expire time.
 // If expired is 0, it will be deleted by next GC operation.
 func (c *MysqlCacher) Put(key string, val interface{}, expire int64) error {
-	item := &cache.Item{Val: val}
+	item := cache.CacheItemPoolGet()
+	item.Val = val
 	data, err := c.codec.Marshal(item)
+	cache.CacheItemPoolRelease(item)
 	if err != nil {
 		return err
 	}
@@ -84,7 +86,8 @@ func (c *MysqlCacher) read(key string, value interface{}) (*cache.Item, error) {
 		return nil, err
 	}
 
-	item := &cache.Item{Val: value}
+	item := cache.CacheItemPoolGet()
+	item.Val = value
 	if err = c.codec.Unmarshal(data, item); err != nil {
 		return nil, err
 	}
@@ -96,6 +99,9 @@ func (c *MysqlCacher) read(key string, value interface{}) (*cache.Item, error) {
 // Get gets cached value by given key.
 func (c *MysqlCacher) Get(key string, value interface{}) error {
 	item, err := c.read(key, value)
+	if item != nil {
+		defer cache.CacheItemPoolRelease(item)
+	}
 	if err != nil {
 		return nil
 	}
@@ -121,6 +127,9 @@ func (c *MysqlCacher) Delete(key string) error {
 func (c *MysqlCacher) Incr(key string) error {
 	var i int64
 	item, err := c.read(key, &i)
+	if item != nil {
+		defer cache.CacheItemPoolRelease(item)
+	}
 	if err != nil {
 		return err
 	}
@@ -137,6 +146,9 @@ func (c *MysqlCacher) Incr(key string) error {
 func (c *MysqlCacher) Decr(key string) error {
 	var i int64
 	item, err := c.read(key, i)
+	if item != nil {
+		defer cache.CacheItemPoolRelease(item)
+	}
 	if err != nil {
 		return err
 	}
