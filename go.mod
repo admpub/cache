@@ -4,12 +4,12 @@ go 1.14
 
 require (
 	github.com/BurntSushi/toml v1.2.1 // indirect
-	github.com/admpub/copier v0.0.3
+	github.com/admpub/copier v0.1.0
 	github.com/admpub/fsnotify v1.5.0 // indirect
 	github.com/admpub/ini v1.38.2
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
 	github.com/alicebob/miniredis v2.5.0+incompatible
-	github.com/bradfitz/gomemcache v0.0.0-20220106215444-fb4bf637b56d
+	github.com/bradfitz/gomemcache v0.0.0-20221031212613-62deef7fc822
 	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/go-redis/redis/v7 v7.4.1
@@ -36,10 +36,10 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	github.com/webx-top/com v0.7.3
-	github.com/webx-top/echo v2.28.2+incompatible
+	github.com/webx-top/com v0.8.0
+	github.com/webx-top/echo v2.30.2+incompatible
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
-	golang.org/x/net v0.1.0 // indirect
+	golang.org/x/net v0.2.0 // indirect
 	golang.org/x/sync v0.1.0
 	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
