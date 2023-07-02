@@ -1,12 +1,15 @@
 package main
 
 import (
+	"context"
+
 	"github.com/admpub/cache"
 	_ "github.com/admpub/cache/redis"
 )
 
 func main() {
-	ca, err := cache.Cacher(cache.Options{
+	ctx := context.Background()
+	ca, err := cache.Cacher(ctx, cache.Options{
 		Adapter:       "redis",
 		AdapterConfig: "addr=127.0.0.1:6379",
 		OccupyMode:    true,
@@ -16,5 +19,5 @@ func main() {
 		panic(err)
 	}
 
-	ca.Put("liyan", "cache", 60)
+	ca.Put(ctx, "liyan", "cache", 60)
 }

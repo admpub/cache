@@ -15,6 +15,7 @@
 package cache
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -49,7 +50,7 @@ func (c *NodbCacher) Codec() encoding.Codec {
 
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
-func (c *NodbCacher) Put(key string, val interface{}, expire int64) (err error) {
+func (c *NodbCacher) Put(ctx context.Context, key string, val interface{}, expire int64) (err error) {
 	value, err := c.codec.Marshal(val)
 	if err != nil {
 		return err
@@ -67,7 +68,7 @@ func (c *NodbCacher) Put(key string, val interface{}, expire int64) (err error) 
 }
 
 // Get gets cached value by given key.
-func (c *NodbCacher) Get(key string, value interface{}) error {
+func (c *NodbCacher) Get(ctx context.Context, key string, value interface{}) error {
 	val, err := c.db.Get([]byte(key))
 	if err != nil {
 		return err
@@ -79,14 +80,17 @@ func (c *NodbCacher) Get(key string, value interface{}) error {
 }
 
 // Delete deletes cached value by given key.
-func (c *NodbCacher) Delete(key string) error {
+func (c *NodbCacher) Delete(ctx context.Context, key string) error {
 	_, err := c.db.Del([]byte(key))
 	return err
 }
 
 // Incr increases cached int-type value by given key as a counter.
-func (c *NodbCacher) Incr(key string) error {
-	if !c.IsExist(key) {
+func (c *NodbCacher) Incr(ctx context.Context, key string) error {
+	if exist, err := c.IsExist(ctx, key); !exist {
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("key '%s' not exist", key)
 	}
 	_, err := c.db.Incr([]byte(key))
@@ -94,8 +98,11 @@ func (c *NodbCacher) Incr(key string) error {
 }
 
 // Decr decreases cached int-type value by given key as a counter.
-func (c *NodbCacher) Decr(key string) error {
-	if !c.IsExist(key) {
+func (c *NodbCacher) Decr(ctx context.Context, key string) error {
+	if exist, err := c.IsExist(ctx, key); !exist {
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("key '%s' not exist", key)
 	}
 	_, err := c.db.Decr([]byte(key))
@@ -103,9 +110,9 @@ func (c *NodbCacher) Decr(key string) error {
 }
 
 // IsExist returns true if cached value exists.
-func (c *NodbCacher) IsExist(key string) bool {
+func (c *NodbCacher) IsExist(ctx context.Context, key string) (bool, error) {
 	num, err := c.db.Exists([]byte(key))
-	return err == nil && num > 0
+	return num > 0, err
 }
 
 func (c *NodbCacher) new() (err error) {
@@ -125,7 +132,7 @@ func (c *NodbCacher) new() (err error) {
 }
 
 // Flush deletes all cached data.
-func (c *NodbCacher) Flush() (err error) {
+func (c *NodbCacher) Flush(ctx context.Context) (err error) {
 	if err = os.RemoveAll(c.filepath); err != nil {
 		return err
 	}
@@ -138,7 +145,7 @@ func (c *NodbCacher) Flush() (err error) {
 }
 
 // StartAndGC starts GC routine based on config string settings.
-func (c *NodbCacher) StartAndGC(opt cache.Options) error {
+func (c *NodbCacher) StartAndGC(ctx context.Context, opt cache.Options) error {
 	c.filepath = opt.AdapterConfig
 	return c.new()
 }

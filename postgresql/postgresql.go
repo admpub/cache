@@ -15,9 +15,11 @@
 package cache
 
 import (
+	"context"
 	"crypto/md5"
 	"database/sql"
 	"encoding/hex"
+	"fmt"
 	"log"
 	"time"
 
@@ -57,7 +59,7 @@ func (c *PostgresCacher) md5(key string) string {
 
 // Put puts value into cache with key and expire time.
 // If expired is 0, it will be deleted by next GC operation.
-func (c *PostgresCacher) Put(key string, val interface{}, expire int64) error {
+func (c *PostgresCacher) Put(ctx context.Context, key string, val interface{}, expire int64) error {
 	item := cache.CacheItemPoolGet()
 	item.Val = val
 	data, err := c.codec.Marshal(item)
@@ -67,21 +69,25 @@ func (c *PostgresCacher) Put(key string, val interface{}, expire int64) error {
 	}
 
 	now := time.Now().Unix()
-	if c.IsExist(key) {
-		_, err = c.c.Exec("UPDATE cache SET data=$1, created=$2, expire=$3 WHERE key=$4", data, now, expire, c.md5(key))
+	exist, err := c.IsExist(ctx, key)
+	if err != nil {
+		return err
+	}
+	if exist {
+		_, err = c.c.ExecContext(ctx, "UPDATE cache SET data=$1, created=$2, expire=$3 WHERE key=$4", data, now, expire, c.md5(key))
 	} else {
-		_, err = c.c.Exec("INSERT INTO cache(key,data,created,expire) VALUES($1,$2,$3,$4)", c.md5(key), data, now, expire)
+		_, err = c.c.ExecContext(ctx, "INSERT INTO cache(key,data,created,expire) VALUES($1,$2,$3,$4)", c.md5(key), data, now, expire)
 	}
 	return err
 }
 
-func (c *PostgresCacher) read(key string, value interface{}) (*cache.Item, error) {
+func (c *PostgresCacher) read(ctx context.Context, key string, value interface{}) (*cache.Item, error) {
 	var (
 		data    []byte
 		created int64
 		expire  int64
 	)
-	err := c.c.QueryRow("SELECT data,created,expire FROM cache WHERE key=$1", c.md5(key)).Scan(&data, &created, &expire)
+	err := c.c.QueryRowContext(ctx, "SELECT data,created,expire FROM cache WHERE key=$1", c.md5(key)).Scan(&data, &created, &expire)
 	if err != nil {
 		return nil, err
 	}
@@ -97,8 +103,8 @@ func (c *PostgresCacher) read(key string, value interface{}) (*cache.Item, error
 }
 
 // Get gets cached value by given key.
-func (c *PostgresCacher) Get(key string, value interface{}) error {
-	item, err := c.read(key, value)
+func (c *PostgresCacher) Get(ctx context.Context, key string, value interface{}) error {
+	item, err := c.read(ctx, key, value)
 	if item != nil {
 		defer cache.CacheItemPoolRelease(item)
 	}
@@ -111,22 +117,22 @@ func (c *PostgresCacher) Get(key string, value interface{}) error {
 
 	if item.Expire > 0 &&
 		(time.Now().Unix()-item.Created) >= item.Expire {
-		c.Delete(key)
+		c.Delete(ctx, key)
 		return cache.ErrExpired
 	}
 	return nil
 }
 
 // Delete deletes cached value by given key.
-func (c *PostgresCacher) Delete(key string) error {
-	_, err := c.c.Exec("DELETE FROM cache WHERE key=$1", c.md5(key))
+func (c *PostgresCacher) Delete(ctx context.Context, key string) error {
+	_, err := c.c.ExecContext(ctx, "DELETE FROM cache WHERE key=$1", c.md5(key))
 	return err
 }
 
 // Incr increases cached int-type value by given key as a counter.
-func (c *PostgresCacher) Incr(key string) error {
+func (c *PostgresCacher) Incr(ctx context.Context, key string) error {
 	var i int64
-	item, err := c.read(key, &i)
+	item, err := c.read(ctx, key, &i)
 	if item != nil {
 		defer cache.CacheItemPoolRelease(item)
 	}
@@ -139,13 +145,13 @@ func (c *PostgresCacher) Incr(key string) error {
 		return err
 	}
 
-	return c.Put(key, item.Val, item.Expire)
+	return c.Put(ctx, key, item.Val, item.Expire)
 }
 
 // Decr cached int value.
-func (c *PostgresCacher) Decr(key string) error {
+func (c *PostgresCacher) Decr(ctx context.Context, key string) error {
 	var i int64
-	item, err := c.read(key, &i)
+	item, err := c.read(ctx, key, &i)
 	if item != nil {
 		defer cache.CacheItemPoolRelease(item)
 	}
@@ -158,39 +164,40 @@ func (c *PostgresCacher) Decr(key string) error {
 		return err
 	}
 
-	return c.Put(key, item.Val, item.Expire)
+	return c.Put(ctx, key, item.Val, item.Expire)
 }
 
 // IsExist returns true if cached value exists.
-func (c *PostgresCacher) IsExist(key string) bool {
+func (c *PostgresCacher) IsExist(ctx context.Context, key string) (bool, error) {
 	var data []byte
-	err := c.c.QueryRow("SELECT data FROM cache WHERE key=$1", c.md5(key)).Scan(&data)
+	err := c.c.QueryRowContext(ctx, "SELECT data FROM cache WHERE key=$1", c.md5(key)).Scan(&data)
 	if err != nil && err != sql.ErrNoRows {
-		panic("cache/postgres: error checking existence: " + err.Error())
+		err = fmt.Errorf("cache/postgres: error checking existence: %w", err)
+		return false, err
 	}
-	return err != sql.ErrNoRows
+	return err != sql.ErrNoRows, nil
 }
 
 // Flush deletes all cached data.
-func (c *PostgresCacher) Flush() error {
-	_, err := c.c.Exec("DELETE FROM cache")
+func (c *PostgresCacher) Flush(ctx context.Context) error {
+	_, err := c.c.ExecContext(ctx, "DELETE FROM cache")
 	return err
 }
 
-func (c *PostgresCacher) startGC() {
+func (c *PostgresCacher) startGC(ctx context.Context) {
 	if c.interval < 1 {
 		return
 	}
 
-	if _, err := c.c.Exec("DELETE FROM cache WHERE EXTRACT(EPOCH FROM NOW()) - created >= expire"); err != nil {
+	if _, err := c.c.ExecContext(ctx, "DELETE FROM cache WHERE EXTRACT(EPOCH FROM NOW()) - created >= expire"); err != nil {
 		log.Printf("cache/postgres: error garbage collecting: %v", err)
 	}
 
-	time.AfterFunc(time.Duration(c.interval)*time.Second, func() { c.startGC() })
+	time.AfterFunc(time.Duration(c.interval)*time.Second, func() { c.startGC(ctx) })
 }
 
 // StartAndGC starts GC routine based on config string settings.
-func (c *PostgresCacher) StartAndGC(opt cache.Options) (err error) {
+func (c *PostgresCacher) StartAndGC(ctx context.Context, opt cache.Options) (err error) {
 	c.interval = opt.Interval
 
 	c.c, err = sql.Open("postgres", opt.AdapterConfig)
@@ -201,7 +208,7 @@ func (c *PostgresCacher) StartAndGC(opt cache.Options) (err error) {
 		return err
 	}
 
-	go c.startGC()
+	go c.startGC(ctx)
 	return nil
 }
 

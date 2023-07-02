@@ -20,8 +20,10 @@ import (
 	"strings"
 	"time"
 
-	redis "github.com/go-redis/redis/v7"
+	"github.com/redis/rueidis"
+	"github.com/redis/rueidis/rueidiscompat"
 	"github.com/webx-top/com"
+	"gopkg.in/redis.v5"
 
 	"github.com/admpub/cache"
 	"github.com/admpub/cache/encoding"
@@ -32,8 +34,9 @@ import (
 type RedisCacher struct {
 	cache.GetAs
 	codec      encoding.Codec
-	c          *redis.Client
-	options    *redis.Options
+	client     rueidis.Client
+	c          rueidiscompat.Cmdable
+	options    *rueidis.ClientOption
 	prefix     string
 	hsetName   string
 	occupyMode bool
@@ -55,18 +58,18 @@ func (c *RedisCacher) Put(ctx context.Context, key string, val interface{}, expi
 	if err != nil {
 		return err
 	}
-	if err := c.c.Set(key, com.Bytes2str(value), time.Duration(expire)*time.Second).Err(); err != nil {
+	if err := c.c.Set(ctx, key, com.Bytes2str(value), time.Duration(expire)*time.Second).Err(); err != nil {
 		return err
 	}
 	if c.occupyMode {
 		return nil
 	}
-	return c.c.HSet(c.hsetName, key, "0").Err()
+	return c.c.HSet(ctx, c.hsetName, key, "0").Err()
 }
 
 // Get gets cached value by given key.
 func (c *RedisCacher) Get(ctx context.Context, key string, value interface{}) error {
-	val, err := c.c.Get(c.prefix + key).Bytes()
+	val, err := c.c.Get(ctx, c.prefix+key).Bytes()
 	if err != nil {
 		if err == redis.Nil {
 			return cache.ErrNotFound
@@ -83,14 +86,14 @@ func (c *RedisCacher) Get(ctx context.Context, key string, value interface{}) er
 // Delete deletes cached value by given key.
 func (c *RedisCacher) Delete(ctx context.Context, key string) error {
 	key = c.prefix + key
-	if err := c.c.Del(key).Err(); err != nil {
+	if err := c.c.Del(ctx, key).Err(); err != nil {
 		return err
 	}
 
 	if c.occupyMode {
 		return nil
 	}
-	return c.c.HDel(c.hsetName, key).Err()
+	return c.c.HDel(ctx, c.hsetName, key).Err()
 }
 
 // Incr increases cached int-type value by given key as a counter.
@@ -101,7 +104,7 @@ func (c *RedisCacher) Incr(ctx context.Context, key string) error {
 		}
 		return fmt.Errorf("key '%s' not exist", key)
 	}
-	return c.c.Incr(c.prefix + key).Err()
+	return c.c.Incr(ctx, c.prefix+key).Err()
 }
 
 // Decr decreases cached int-type value by given key as a counter.
@@ -112,17 +115,17 @@ func (c *RedisCacher) Decr(ctx context.Context, key string) error {
 		}
 		return fmt.Errorf("key '%s' not exist", key)
 	}
-	return c.c.Decr(c.prefix + key).Err()
+	return c.c.Decr(ctx, c.prefix+key).Err()
 }
 
 // IsExist returns true if cached value exists.
 func (c *RedisCacher) IsExist(ctx context.Context, key string) (bool, error) {
-	if c.c.Exists(c.prefix+key).Val() > 0 {
+	if c.c.Exists(ctx, c.prefix+key).Val() > 0 {
 		return true, nil
 	}
 
 	if !c.occupyMode {
-		c.c.HDel(c.hsetName, c.prefix+key)
+		c.c.HDel(ctx, c.hsetName, c.prefix+key)
 	}
 	return false, nil
 }
@@ -130,17 +133,17 @@ func (c *RedisCacher) IsExist(ctx context.Context, key string) (bool, error) {
 // Flush deletes all cached data.
 func (c *RedisCacher) Flush(ctx context.Context) error {
 	if c.occupyMode {
-		return c.c.FlushDB().Err()
+		return c.c.FlushDB(ctx).Err()
 	}
 
-	keys, err := c.c.HKeys(c.hsetName).Result()
+	keys, err := c.c.HKeys(ctx, c.hsetName).Result()
 	if err != nil {
 		return err
 	}
-	if err = c.c.Del(keys...).Err(); err != nil {
+	if err = c.c.Del(ctx, keys...).Err(); err != nil {
 		return err
 	}
-	return c.c.Del(c.hsetName).Err()
+	return c.c.Del(ctx, c.hsetName).Err()
 }
 
 // StartAndGC starts GC routine based on config string settings.
@@ -154,23 +157,23 @@ func (c *RedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 		return err
 	}
 
-	c.options = &redis.Options{
-		Network: "tcp",
+	c.options = &rueidis.ClientOption{
+		InitAddress: []string{},
 	}
 	for k, v := range cfg.Section("").KeysHash() {
 		switch k {
-		case "network":
-			c.options.Network = v
 		case "addr":
-			c.options.Addr = v
+			c.options.InitAddress = strings.Split(v, `,`)
+		case "username":
+			c.options.Username = v
 		case "password":
 			c.options.Password = v
 		case "db":
-			c.options.DB = com.Int(v)
+			c.options.SelectDB = com.Int(v)
 		case "pool_size":
-			c.options.PoolSize = com.Int(v)
+			c.options.BlockingPoolSize = com.Int(v)
 		case "idle_timeout":
-			c.options.IdleTimeout, err = time.ParseDuration(v + "s")
+			c.options.Dialer.Timeout, err = time.ParseDuration(v + "s")
 			if err != nil {
 				return fmt.Errorf("error parsing idle timeout: %v", err)
 			}
@@ -183,31 +186,32 @@ func (c *RedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 		}
 	}
 
-	c.c = redis.NewClient(c.options)
-	if err = c.c.Ping().Err(); err != nil {
+	c.client, err = rueidis.NewClient(*c.options)
+	if err != nil {
 		return err
 	}
-
-	return nil
+	c.c = rueidiscompat.NewAdapter(c.client)
+	return err
 }
 
 func (c *RedisCacher) Close() error {
-	if c.c == nil {
+	if c.client == nil {
 		return nil
 	}
-	return c.c.Close()
+	c.client.Close()
+	return nil
 }
 
 func (c *RedisCacher) Client() interface{} {
-	return c.c
+	return c.client
 }
 
-func (c *RedisCacher) Options() *redis.Options {
+func (c *RedisCacher) Options() *rueidis.ClientOption {
 	return c.options
 }
 
-func AsClient(client interface{}) *redis.Client {
-	return client.(*redis.Client)
+func AsClient(client interface{}) rueidis.Client {
+	return client.(rueidis.Client)
 }
 
 func New() cache.Cache {

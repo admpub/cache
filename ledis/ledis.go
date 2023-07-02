@@ -15,6 +15,7 @@
 package cache
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"strings"
@@ -50,7 +51,7 @@ func (c *LedisCacher) Codec() encoding.Codec {
 
 // Put puts value into cache with key and expire time.
 // If expired is 0, it lives forever.
-func (c *LedisCacher) Put(key string, val interface{}, expire int64) (err error) {
+func (c *LedisCacher) Put(ctx context.Context, key string, val interface{}, expire int64) (err error) {
 	value, err := c.codec.Marshal(val)
 	if err != nil {
 		return err
@@ -72,7 +73,7 @@ func (c *LedisCacher) Put(key string, val interface{}, expire int64) (err error)
 }
 
 // Get gets cached value by given key.
-func (c *LedisCacher) Get(key string, value interface{}) error {
+func (c *LedisCacher) Get(ctx context.Context, key string, value interface{}) error {
 	val, err := c.db.Get([]byte(key))
 	if err != nil {
 		return err
@@ -84,7 +85,7 @@ func (c *LedisCacher) Get(key string, value interface{}) error {
 }
 
 // Delete deletes cached value by given key.
-func (c *LedisCacher) Delete(key string) (err error) {
+func (c *LedisCacher) Delete(ctx context.Context, key string) (err error) {
 	if _, err = c.db.Del([]byte(key)); err != nil {
 		return err
 	}
@@ -93,8 +94,11 @@ func (c *LedisCacher) Delete(key string) (err error) {
 }
 
 // Incr increases cached int-type value by given key as a counter.
-func (c *LedisCacher) Incr(key string) error {
-	if !c.IsExist(key) {
+func (c *LedisCacher) Incr(ctx context.Context, key string) error {
+	if exist, err := c.IsExist(ctx, key); !exist {
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("key '%s' not exist", key)
 	}
 	_, err := c.db.Incr([]byte(key))
@@ -102,8 +106,11 @@ func (c *LedisCacher) Incr(key string) error {
 }
 
 // Decr decreases cached int-type value by given key as a counter.
-func (c *LedisCacher) Decr(key string) error {
-	if !c.IsExist(key) {
+func (c *LedisCacher) Decr(ctx context.Context, key string) error {
+	if exist, err := c.IsExist(ctx, key); !exist {
+		if err != nil {
+			return err
+		}
 		return fmt.Errorf("key '%s' not exist", key)
 	}
 	_, err := c.db.Decr([]byte(key))
@@ -111,17 +118,17 @@ func (c *LedisCacher) Decr(key string) error {
 }
 
 // IsExist returns true if cached value exists.
-func (c *LedisCacher) IsExist(key string) bool {
+func (c *LedisCacher) IsExist(ctx context.Context, key string) (bool, error) {
 	count, err := c.db.Exists([]byte(key))
 	if err == nil && count > 0 {
-		return true
+		return true, nil
 	}
 	c.db.HDel(defaultHSetName, []byte(key))
-	return false
+	return false, err
 }
 
 // Flush deletes all cached data.
-func (c *LedisCacher) Flush() error {
+func (c *LedisCacher) Flush(ctx context.Context) error {
 	// FIXME: there must be something wrong, shouldn't use this one.
 	_, err := c.db.FlushAll()
 	return err
@@ -137,7 +144,7 @@ func (c *LedisCacher) Flush() error {
 	// return err
 }
 
-func (c *LedisCacher) startGC() {
+func (c *LedisCacher) startGC(ctx context.Context) {
 	if c.interval < 1 {
 		return
 	}
@@ -147,7 +154,9 @@ func (c *LedisCacher) startGC() {
 		log.Printf("cache/ledis: error garbage collecting(get): %v", err)
 		return
 	}
-
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	now := time.Now().Unix()
 	for _, v := range kvs {
 		expire := com.Int64(v.Value)
@@ -155,18 +164,18 @@ func (c *LedisCacher) startGC() {
 			continue
 		}
 
-		if err = c.Delete(string(v.Field)); err != nil {
+		if err = c.Delete(ctx, string(v.Field)); err != nil {
 			log.Printf("cache/ledis: error garbage collecting(delete): %v", err)
 			continue
 		}
 	}
 
-	time.AfterFunc(time.Duration(c.interval)*time.Second, func() { c.startGC() })
+	time.AfterFunc(time.Duration(c.interval)*time.Second, func() { c.startGC(ctx) })
 }
 
 // StartAndGC starts GC routine based on config string settings.
 // AdapterConfig: data_dir=./app.db,db=0
-func (c *LedisCacher) StartAndGC(opts cache.Options) error {
+func (c *LedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error {
 	c.interval = opts.Interval
 
 	cfg, err := ini.Load([]byte(strings.Replace(opts.AdapterConfig, ",", "\n", -1)))
@@ -196,7 +205,7 @@ func (c *LedisCacher) StartAndGC(opts cache.Options) error {
 		return err
 	}
 
-	go c.startGC()
+	go c.startGC(ctx)
 	return nil
 }
 

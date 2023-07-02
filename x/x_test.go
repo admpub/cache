@@ -1,6 +1,7 @@
 package x
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"sync"
@@ -24,13 +25,14 @@ func TestX(t *testing.T) {
 	c := New(storage, QueryFunc(func() error {
 		return nil
 	}))
+	ctx := context.Background()
 	wg := &sync.WaitGroup{}
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
 			data := &TestData{}
-			err := c.Get(`test`, data, Query(QueryFunc(func() error {
+			err := c.Get(ctx, `test`, data, Query(QueryFunc(func() error {
 				data.Index = i
 				data.Name = `test_` + strconv.Itoa(i)
 				data.Age = 20

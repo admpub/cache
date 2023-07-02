@@ -1,6 +1,7 @@
 package cache_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/admpub/cache"
@@ -8,7 +9,8 @@ import (
 )
 
 func TestMemory(t *testing.T) {
-	c, err := cache.NewCacher("memory", cache.Options{Interval: 300})
+	ctx := context.Background()
+	c, err := cache.NewCacher(ctx, "memory", cache.Options{Interval: 300})
 	assert.Nil(t, err)
 	defer c.Close()
 	data := &[]*User{
@@ -16,32 +18,32 @@ func TestMemory(t *testing.T) {
 		&User{Name: "B", Age: 7},
 		&User{Name: "C", Age: 8},
 	}
-	err = c.Put("testkey", data, 86400)
+	err = c.Put(ctx, "testkey", data, 86400)
 	assert.Nil(t, err)
 	recv := &[]*User{}
-	err = c.Get("testkey", recv)
+	err = c.Get(ctx, "testkey", recv)
 	assert.Nil(t, err)
 	assert.Equal(t, data, recv)
 
 	wrap := &Wrap{
 		K: `test`, V: 100, X: data,
 	}
-	err = c.Put("testkey2", wrap, 86400)
+	err = c.Put(ctx, "testkey2", wrap, 86400)
 	assert.Nil(t, err)
 	recv2 := &Wrap{
 		X: &[]*User{},
 	}
-	err = c.Get("testkey2", recv2)
+	err = c.Get(ctx, "testkey2", recv2)
 	assert.Nil(t, err)
 	assert.Equal(t, wrap, recv2)
 
 	wraps := []*Wrap{wrap}
-	err = c.Put("testkey3", wraps, 86400)
+	err = c.Put(ctx, "testkey3", wraps, 86400)
 	assert.Nil(t, err)
 	recv3 := []*Wrap{
 		&Wrap{X: &[]*User{}},
 	}
-	err = c.Get("testkey3", &recv3)
+	err = c.Get(ctx, "testkey3", &recv3)
 	assert.Nil(t, err)
 	assert.Equal(t, wraps, recv3)
 
@@ -52,7 +54,7 @@ func TestMemory(t *testing.T) {
 	recv2 = &Wrap{
 		X: &[]*User{},
 	}
-	err = c.Get("testkey2", recv2)
+	err = c.Get(ctx, "testkey2", recv2)
 	assert.Nil(t, err)
 	// 应该还是原值
 	assert.Equal(t, &wrapCopy, recv2)
