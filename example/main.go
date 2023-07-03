@@ -8,7 +8,8 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	ca, err := cache.Cacher(ctx, cache.Options{
 		Adapter:       "redis",
 		AdapterConfig: "addr=127.0.0.1:6379",
@@ -19,5 +20,5 @@ func main() {
 		panic(err)
 	}
 
-	ca.Put(ctx, "liyan", "cache", 60)
+	ca.Put(ctx, "key", "cache", 60)
 }
