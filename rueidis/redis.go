@@ -20,14 +20,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/rueidis"
-	"github.com/redis/rueidis/rueidiscompat"
-	"github.com/webx-top/com"
-	"gopkg.in/redis.v5"
-
 	"github.com/admpub/cache"
 	"github.com/admpub/cache/encoding"
 	"github.com/admpub/ini"
+	"github.com/redis/rueidis"
+	"github.com/redis/rueidis/rueidiscompat"
+	"github.com/webx-top/com"
 )
 
 // RedisCacher represents a redis cache adapter implementation.
@@ -71,7 +69,7 @@ func (c *RedisCacher) Put(ctx context.Context, key string, val interface{}, expi
 func (c *RedisCacher) Get(ctx context.Context, key string, value interface{}) error {
 	val, err := c.c.Get(ctx, c.prefix+key).Bytes()
 	if err != nil {
-		if err == redis.Nil {
+		if rawErr, ok := err.(*rueidis.RedisError); ok && rawErr.IsNil() {
 			return cache.ErrNotFound
 		}
 		return err
@@ -162,6 +160,7 @@ func (c *RedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 	}
 	for k, v := range cfg.Section("").KeysHash() {
 		switch k {
+		case "network":
 		case "addr":
 			c.options.InitAddress = strings.Split(v, `,`)
 		case "username":
@@ -188,7 +187,13 @@ func (c *RedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 
 	c.client, err = rueidis.NewClient(*c.options)
 	if err != nil {
-		return err
+		if strings.Contains(err.Error(), `not supporting RESP3`) {
+			c.options.DisableCache = true
+			c.client, err = rueidis.NewClient(*c.options)
+		}
+		if err != nil {
+			return err
+		}
 	}
 	c.c = rueidiscompat.NewAdapter(c.client)
 	return err
@@ -206,12 +211,20 @@ func (c *RedisCacher) Client() interface{} {
 	return c.client
 }
 
+func (c *RedisCacher) CompatClient() interface{} {
+	return c.c
+}
+
 func (c *RedisCacher) Options() *rueidis.ClientOption {
 	return c.options
 }
 
 func AsClient(client interface{}) rueidis.Client {
 	return client.(rueidis.Client)
+}
+
+func AsCompatClient(client interface{}) rueidiscompat.Cmdable {
+	return client.(rueidiscompat.Cmdable)
 }
 
 func New() cache.Cache {

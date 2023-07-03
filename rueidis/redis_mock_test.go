@@ -19,10 +19,11 @@ func TestCache(t *testing.T) {
 
 	ctx := context.Background()
 	c := New()
-	c.StartAndGC(ctx, cache.Options{
+	err = c.StartAndGC(ctx, cache.Options{
 		Adapter:       `redis`,
 		AdapterConfig: `network=tcp,addr=` + s.Addr() + `,password=,db=0,pool_size=100,idle_timeout=180,hset_name=Cache,prefix=cache:`,
 	})
+	assert.NoError(t,err)
 
 	assert.Implements(t, (*cache.Cache)(nil), c)
 	err = c.Put(ctx, "exists", "exists", 86400)
