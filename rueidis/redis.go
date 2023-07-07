@@ -69,7 +69,7 @@ func (c *RedisCacher) Put(ctx context.Context, key string, val interface{}, expi
 func (c *RedisCacher) Get(ctx context.Context, key string, value interface{}) error {
 	val, err := c.c.Get(ctx, c.prefix+key).Bytes()
 	if err != nil {
-		if rawErr, ok := err.(*rueidis.RedisError); ok && rawErr.IsNil() {
+		if rueidis.IsRedisNil(err) {
 			return cache.ErrNotFound
 		}
 		return err
