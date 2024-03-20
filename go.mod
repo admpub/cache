@@ -8,19 +8,21 @@ require (
 	github.com/alicebob/miniredis v2.5.0+incompatible
 	github.com/bradfitz/gomemcache v0.0.0-20230905024940-24af94b03874
 	github.com/go-redis/redis/v7 v7.4.1
-	github.com/go-sql-driver/mysql v1.7.1
+	github.com/go-sql-driver/mysql v1.8.0
 	github.com/ledisdb/ledisdb v0.0.0-20200510135210-d35789ec47e6
 	github.com/lib/pq v1.10.9
 	github.com/lunny/nodb v0.0.0-20160621015157-fc1ef06ad4af
-	github.com/redis/rueidis v1.0.28
+	github.com/redis/rueidis v1.0.32
+	github.com/redis/rueidis/rueidiscompat v1.0.32
 	github.com/stretchr/testify v1.8.4
 	github.com/webx-top/com v1.2.12
-	github.com/webx-top/echo v1.6.1
+	github.com/webx-top/echo v1.6.4
 	golang.org/x/sync v0.6.0
 	gopkg.in/redis.v5 v5.2.9
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/admpub/fsnotify v1.7.0 // indirect
 	github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a // indirect
@@ -47,8 +49,8 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
 	github.com/yuin/gopher-lua v0.0.0-20200816102855-ee81675732da // indirect
-	golang.org/x/net v0.21.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/net v0.22.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/ini.v1 v1.62.0 // indirect
