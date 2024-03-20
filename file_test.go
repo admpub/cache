@@ -54,9 +54,7 @@ func TestFile(t *testing.T) {
 	wraps := []*Wrap{wrap}
 	err = c.Put(ctx, "testkey3", wraps, 86400)
 	assert.Nil(t, err)
-	recv3 := []*Wrap{
-		&Wrap{X: &[]*User{}},
-	}
+	recv3 := []*Wrap{wrap}
 	err = c.Get(ctx, "testkey3", &recv3)
 	assert.Nil(t, err)
 	assert.Equal(t, wraps, recv3)

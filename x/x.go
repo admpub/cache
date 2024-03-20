@@ -42,25 +42,20 @@ func (c *Cachex) Get(ctx context.Context, key string, value interface{}, opts ..
 	}
 
 	// 可选参数
-	var options getOptions
+	var options Options
 	for _, opt := range opts {
-		opt.apply(&options)
+		opt(&options)
 	}
 	return c.get(ctx, key, value, options)
 }
 
-const (
-	Disabled int64 = -1
-	Fresh    int64 = -2
-)
-
 // get ttl:-1 不用缓存; ttl:-2 强制更新缓存
-func (c *Cachex) get(ctx context.Context, key string, value interface{}, options getOptions) error {
+func (c *Cachex) get(ctx context.Context, key string, value interface{}, options Options) error {
 	querier := c.querier
 	if options.querier != nil {
 		querier = options.querier
 	}
-	if options.ttl == Disabled || options.disableCacheUsage {
+	if options.disableCacheUsage {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
@@ -76,7 +71,7 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 	if ttl == 0 {
 		ttl = c.defaultTTL
 	}
-	if ttl == Fresh || options.useFreshData {
+	if options.useFreshData {
 		if querier == nil {
 			return cache.ErrNotFound
 		}
