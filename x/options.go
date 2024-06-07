@@ -22,6 +22,10 @@ func (o *Options) SetTTL(ttl int64) {
 	o.ttl = ttl
 }
 
+func (o *Options) AddTTL(ttl int64) {
+	o.ttl += ttl
+}
+
 func (o *Options) SetDisableCacheUsage(disableCacheUsage bool) {
 	o.disableCacheUsage = disableCacheUsage
 }
@@ -44,6 +48,12 @@ func Query(querier Querier) GetOption {
 func TTL(ttl int64) GetOption {
 	return func(o *Options) {
 		o.SetTTL(ttl)
+	}
+}
+
+func AddTTL(ttl int64) GetOption {
+	return func(o *Options) {
+		o.AddTTL(ttl)
 	}
 }
 
