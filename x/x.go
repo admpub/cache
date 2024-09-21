@@ -26,11 +26,12 @@ func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) 
 	return c
 }
 
+var sg = singleflight.Group{}
+
 // Cachex 缓存处理类
 type Cachex struct {
 	storage cache.Cache
 	querier Querier
-	sg      singleflight.Group
 	inpool  bool
 
 	// useStale UseStaleWhenError
@@ -127,7 +128,7 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 	}
 	// 在一份实例中
 	// 不同时发起重复的查询请求——解决缓存失效风暴
-	getValue, getErr, _ := c.sg.Do(key, func() (interface{}, error) {
+	getValue, getErr, _ := sg.Do(key, func() (interface{}, error) {
 		var staled interface{}
 		dErr := c.storage.Get(ctx, key, value)
 		if dErr == nil {
