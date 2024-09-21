@@ -22,7 +22,7 @@ type TestData struct {
 
 func TestX(t *testing.T) {
 	storage := cache.NewMemoryCacher()
-	c := New(storage, QueryFunc(func() error {
+	c := NewFromPool(storage, QueryFunc(func() error {
 		return nil
 	}))
 	defer c.Release()

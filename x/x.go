@@ -12,10 +12,16 @@ import (
 
 var DefaultTTL int64 = 86400 * 10 * 366
 
-// New 新建缓存处理对象
-func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
+func NewFromPool(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
 	c = cxPool.Get().(*Cachex)
 	c.inpool = true
+	c.Init(storage, querier, defaultTTL...)
+	return c
+}
+
+// New 新建缓存处理对象
+func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
+	c = &Cachex{}
 	c.Init(storage, querier, defaultTTL...)
 	return c
 }
