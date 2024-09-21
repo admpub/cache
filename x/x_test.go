@@ -25,6 +25,7 @@ func TestX(t *testing.T) {
 	c := New(storage, QueryFunc(func() error {
 		return nil
 	}))
+	defer c.Release()
 	ctx := context.Background()
 	wg := &sync.WaitGroup{}
 	for i := 0; i < 10; i++ {

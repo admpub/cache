@@ -3,32 +3,61 @@ package x
 import (
 	"context"
 	"reflect"
+	"sync"
 
 	"github.com/admpub/cache"
 	"github.com/admpub/copier"
 	"golang.org/x/sync/singleflight"
 )
 
+var DefaultTTL int64 = 86400 * 10 * 366
+
+// New 新建缓存处理对象
+func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
+	c = cxPool.Get().(*Cachex)
+	c.inpool = true
+	c.Init(storage, querier, defaultTTL...)
+	return c
+}
+
 // Cachex 缓存处理类
 type Cachex struct {
 	storage cache.Cache
 	querier Querier
 	sg      singleflight.Group
+	inpool  bool
 
 	// useStale UseStaleWhenError
 	useStale   bool
 	defaultTTL int64
 }
 
-var DefaultTTL int64 = 86400 * 10 * 366
+var cxPool = sync.Pool{
+	New: func() interface{} {
+		return &Cachex{}
+	},
+}
 
-// New 新建缓存处理对象
-func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) {
-	c = &Cachex{
-		storage:    storage,
-		querier:    querier,
-		defaultTTL: DefaultTTL,
+func (c *Cachex) Reset() *Cachex {
+	c.storage = nil
+	c.querier = nil
+	c.useStale = false
+	c.defaultTTL = 0
+	return c
+}
+
+func (c *Cachex) Release() {
+	c.Reset()
+	if c.inpool {
+		cxPool.Put(c)
 	}
+}
+
+func (c *Cachex) Init(storage cache.Cache, querier Querier, defaultTTL ...int64) *Cachex {
+	c.storage = storage
+	c.querier = querier
+	c.useStale = false
+	c.defaultTTL = DefaultTTL
 	if len(defaultTTL) > 0 {
 		c.defaultTTL = defaultTTL[0]
 	}
