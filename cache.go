@@ -53,6 +53,7 @@ type Cache interface {
 	Client() interface{}
 	Codec
 	Getter
+	Doer
 }
 
 type Getter interface {
@@ -70,6 +71,10 @@ type Getter interface {
 	Any(ctx context.Context, key string) interface{}
 	Mapx(ctx context.Context, key string) param.Store
 	Slice(ctx context.Context, key string) []interface{}
+}
+
+type Doer interface {
+	Do(key string, fn func() (interface{}, error)) (v interface{}, err error, shared bool)
 }
 
 var DefaultCodec encoding.Codec = json.JSON

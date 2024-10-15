@@ -19,6 +19,7 @@ import (
 	"errors"
 
 	"github.com/webx-top/echo/param"
+	"golang.org/x/sync/singleflight"
 )
 
 func As(cache Cache) GetAs {
@@ -27,90 +28,96 @@ func As(cache Cache) GetAs {
 
 type GetAs struct {
 	Cache
+	sg singleflight.Group
 }
 
-func (g GetAs) String(ctx context.Context, key string) string {
+func (g *GetAs) String(ctx context.Context, key string) string {
 	var r string
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Int(ctx context.Context, key string) int {
+func (g *GetAs) Int(ctx context.Context, key string) int {
 	var r int
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Uint(ctx context.Context, key string) uint {
+func (g *GetAs) Uint(ctx context.Context, key string) uint {
 	var r uint
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Int64(ctx context.Context, key string) int64 {
+func (g *GetAs) Int64(ctx context.Context, key string) int64 {
 	var r int64
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Uint64(ctx context.Context, key string) uint64 {
+func (g *GetAs) Uint64(ctx context.Context, key string) uint64 {
 	var r uint64
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Int32(ctx context.Context, key string) int32 {
+func (g *GetAs) Int32(ctx context.Context, key string) int32 {
 	var r int32
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Uint32(ctx context.Context, key string) uint32 {
+func (g *GetAs) Uint32(ctx context.Context, key string) uint32 {
 	var r uint32
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Float32(ctx context.Context, key string) float32 {
+func (g *GetAs) Float32(ctx context.Context, key string) float32 {
 	var r float32
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Float64(ctx context.Context, key string) float64 {
+func (g *GetAs) Float64(ctx context.Context, key string) float64 {
 	var r float64
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Bytes(ctx context.Context, key string) []byte {
+func (g *GetAs) Bytes(ctx context.Context, key string) []byte {
 	var r []byte
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Map(ctx context.Context, key string) map[string]interface{} {
+func (g *GetAs) Map(ctx context.Context, key string) map[string]interface{} {
 	r := map[string]interface{}{}
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Mapx(ctx context.Context, key string) param.Store {
+func (g *GetAs) Mapx(ctx context.Context, key string) param.Store {
 	r := param.Store{}
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Any(ctx context.Context, key string) interface{} {
+func (g *GetAs) Any(ctx context.Context, key string) interface{} {
 	var r interface{}
 	g.Get(ctx, key, &r)
 	return r
 }
 
-func (g GetAs) Slice(ctx context.Context, key string) []interface{} {
+func (g *GetAs) Slice(ctx context.Context, key string) []interface{} {
 	var r []interface{}
 	g.Get(ctx, key, &r)
 	return r
+}
+
+func (g *GetAs) Do(key string, fn func() (interface{}, error)) (v interface{}, err error, shared bool) {
+	v, err, shared = g.sg.Do(key, fn)
+	return
 }
 
 func Incr(val interface{}) (interface{}, error) {

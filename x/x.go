@@ -7,7 +7,6 @@ import (
 
 	"github.com/admpub/cache"
 	"github.com/admpub/copier"
-	"golang.org/x/sync/singleflight"
 )
 
 var DefaultTTL int64 = 86400 * 10 * 366
@@ -25,8 +24,6 @@ func New(storage cache.Cache, querier Querier, defaultTTL ...int64) (c *Cachex) 
 	c.Init(storage, querier, defaultTTL...)
 	return c
 }
-
-var sg = singleflight.Group{}
 
 // Cachex 缓存处理类
 type Cachex struct {
@@ -128,12 +125,12 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 	}
 	// 在一份实例中
 	// 不同时发起重复的查询请求——解决缓存失效风暴
-	getValue, getErr, _ := sg.Do(key, func() (interface{}, error) {
-		var staled interface{}
+	getValue, getErr, _ := c.storage.Do(key, func() (interface{}, error) {
 		dErr := c.storage.Get(ctx, key, value)
 		if dErr == nil {
 			return value, dErr
 		}
+		var staled interface{}
 		switch dErr {
 		case cache.ErrNotFound: // 下面查询
 		case cache.ErrExpired: // 保存过期数据，如果下面查询失败，且useStale，返回过期数据
@@ -143,8 +140,7 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 		}
 		dErr = querier.Query()
 		if dErr != nil {
-			if c.useStale && staled != nil {
-				// 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
+			if c.useStale && staled != nil { // 当查询发生错误时，使用过期的缓存数据。该特性需要Storage支持
 				reflect.ValueOf(value).Elem().Set(reflect.ValueOf(staled))
 				return staled, dErr
 			}
