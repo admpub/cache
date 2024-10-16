@@ -222,6 +222,12 @@ func (c *LedisCacher) Client() interface{} {
 	return c.c
 }
 
+func (c *LedisCacher) Name() string {
+	return cacheEngineLedis
+}
+
+const cacheEngineLedis = `ledis`
+
 func AsClient(client interface{}) *ledis.Ledis {
 	return client.(*ledis.Ledis)
 }
@@ -233,5 +239,5 @@ func New() cache.Cache {
 }
 
 func init() {
-	cache.Register("ledis", New())
+	cache.Register(cacheEngineLedis, New())
 }

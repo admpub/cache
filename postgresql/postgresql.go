@@ -224,6 +224,12 @@ func (c *PostgresCacher) Client() interface{} {
 	return c.c
 }
 
+func (c *PostgresCacher) Name() string {
+	return cacheEnginePostgres
+}
+
+const cacheEnginePostgres = `postgres`
+
 func AsClient(client interface{}) *sql.DB {
 	return client.(*sql.DB)
 }

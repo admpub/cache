@@ -224,10 +224,16 @@ func (c *MysqlCacher) Client() interface{} {
 	return c.c
 }
 
+func (c *MysqlCacher) Name() string {
+	return cacheEngineMysql
+}
+
+const cacheEngineMysql = `mysql`
+
 func AsClient(client interface{}) *sql.DB {
 	return client.(*sql.DB)
 }
 
 func init() {
-	cache.Register("mysql", New())
+	cache.Register(cacheEngineMysql, New())
 }

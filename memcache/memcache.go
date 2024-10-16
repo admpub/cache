@@ -123,6 +123,12 @@ func (c *MemcacheCacher) Client() interface{} {
 	return c.c
 }
 
+func (c *MemcacheCacher) Name() string {
+	return cacheEngineMemcache
+}
+
+const cacheEngineMemcache = `memcache`
+
 func AsClient(client interface{}) *memcache.Client {
 	return client.(*memcache.Client)
 }
@@ -134,5 +140,5 @@ func New() cache.Cache {
 }
 
 func init() {
-	cache.Register("memcache", New())
+	cache.Register(cacheEngineMemcache, New())
 }

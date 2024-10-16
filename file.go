@@ -19,7 +19,6 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -111,13 +110,13 @@ func (c *FileCacher) Put(ctx context.Context, key string, val interface{}, expir
 	}
 
 	os.MkdirAll(filepath.Dir(filename), os.ModePerm)
-	return ioutil.WriteFile(filename, data, os.ModePerm)
+	return os.WriteFile(filename, data, os.ModePerm)
 }
 
 func (c *FileCacher) read(key string, value interface{}) (*Item, error) {
 	filename := c.filepath(key)
 
-	data, err := ioutil.ReadFile(filename)
+	data, err := os.ReadFile(filename)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, ErrNotFound
@@ -222,7 +221,7 @@ func (c *FileCacher) startGC(ctx context.Context) {
 			return nil
 		}
 
-		data, err := ioutil.ReadFile(path)
+		data, err := os.ReadFile(path)
 		if err != nil && !os.IsNotExist(err) {
 			return fmt.Errorf("ReadFile: %v", err)
 		}
@@ -278,6 +277,12 @@ func (c *FileCacher) Client() interface{} {
 	return nil
 }
 
+func (c *FileCacher) Name() string {
+	return cacheEngineFile
+}
+
+const cacheEngineFile = `file`
+
 func init() {
-	Register("file", NewFileCacher())
+	Register(cacheEngineFile, NewFileCacher())
 }

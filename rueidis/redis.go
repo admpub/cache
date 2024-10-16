@@ -219,6 +219,12 @@ func (c *RedisCacher) Options() *rueidis.ClientOption {
 	return c.options
 }
 
+func (c *RedisCacher) Name() string {
+	return cacheEngineRedis
+}
+
+const cacheEngineRedis = `redis`
+
 func AsClient(client interface{}) rueidis.Client {
 	return client.(rueidis.Client)
 }
@@ -234,5 +240,5 @@ func New() cache.Cache {
 }
 
 func init() {
-	cache.Register("redis", New())
+	cache.Register(cacheEngineRedis, New())
 }

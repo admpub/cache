@@ -212,6 +212,12 @@ func (c *MemoryCacher) Client() interface{} {
 	return nil
 }
 
+func (c *MemoryCacher) Name() string {
+	return cacheEngineMemory
+}
+
+const cacheEngineMemory = `memory`
+
 func init() {
-	Register("memory", NewMemoryCacher())
+	Register(cacheEngineMemory, NewMemoryCacher())
 }

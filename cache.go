@@ -33,6 +33,7 @@ func Version() string {
 
 // Cache is the interface that operates the cache data.
 type Cache interface {
+	Name() string
 	// Put puts value into cache with key and expire time.
 	Put(ctx context.Context, key string, val interface{}, timeout int64) error
 	// Get gets cached value by given key.
