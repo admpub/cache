@@ -69,15 +69,7 @@ func (c *PostgresCacher) Put(ctx context.Context, key string, val interface{}, e
 	}
 
 	now := time.Now().Unix()
-	exist, err := c.IsExist(ctx, key)
-	if err != nil {
-		return err
-	}
-	if exist {
-		_, err = c.c.ExecContext(ctx, "UPDATE cache SET data=$1, created=$2, expire=$3 WHERE key=$4", data, now, expire, c.md5(key))
-	} else {
-		_, err = c.c.ExecContext(ctx, "INSERT INTO cache(key,data,created,expire) VALUES($1,$2,$3,$4)", c.md5(key), data, now, expire)
-	}
+	_, err = c.c.ExecContext(ctx, "REPLACE INTO cache(key,data,created,expire) VALUES($1,$2,$3,$4)", c.md5(key), data, now, expire)
 	return err
 }
 

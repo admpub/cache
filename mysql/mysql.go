@@ -69,15 +69,7 @@ func (c *MysqlCacher) Put(ctx context.Context, key string, val interface{}, expi
 	}
 
 	now := time.Now().Unix()
-	exist, err := c.IsExist(ctx, key)
-	if err != nil {
-		return err
-	}
-	if exist {
-		_, err = c.c.ExecContext(ctx, "UPDATE cache SET data=?, created=?, expire=? WHERE `key`=?", data, now, expire, c.md5(key))
-	} else {
-		_, err = c.c.ExecContext(ctx, "INSERT INTO cache(`key`,data,created,expire) VALUES(?,?,?,?)", c.md5(key), data, now, expire)
-	}
+	_, err = c.c.ExecContext(ctx, "REPLACE INTO cache(`key`,data,created,expire) VALUES(?,?,?,?)", c.md5(key), data, now, expire)
 	return err
 }
 
@@ -205,6 +197,16 @@ func (c *MysqlCacher) StartAndGC(ctx context.Context, opt cache.Options) (err er
 		return err
 	}
 	if err = c.c.Ping(); err != nil {
+		return err
+	}
+
+	if _, err = c.c.ExecContext(ctx, "CREATE TABLE IF NOT EXISTS cache ("+
+		"	`key` char(32) NOT NULL,"+
+		"	`data` longblob NOT NULL,"+
+		"	`created` int(11) unsigned NOT NULL DEFAULT '0',"+
+		"	`expire` int(11) unsigned NOT NULL DEFAULT '0',"+
+		"	PRIMARY KEY (`key`)"+
+		"  ) ENGINE=InnoDB;"); err != nil {
 		return err
 	}
 
