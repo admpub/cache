@@ -17,7 +17,6 @@ package cache
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -35,9 +34,9 @@ var defaultHSetName = []byte("Cache")
 // LedisCacher represents a ledis cache adapter implementation.
 type LedisCacher struct {
 	cache.GetAs
-	codec    encoding.Codec
-	c        *ledis.Ledis
-	db       *ledis.DB
+	codec encoding.Codec
+	c     *ledis.Ledis
+	db    *ledis.DB
 }
 
 func (c *LedisCacher) SetCodec(codec encoding.Codec) {
@@ -164,7 +163,7 @@ func (c *LedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 			return fmt.Errorf("cache/ledis: unsupported option '%s'", k)
 		}
 	}
-        opt.TTLCheckInterval = opts.Interval
+	opt.TTLCheckInterval = opts.Interval
 	c.c, err = ledis.Open(opt)
 	if err != nil {
 		return fmt.Errorf("cache/ledis: error opening db: %v", err)
