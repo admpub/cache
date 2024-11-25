@@ -169,7 +169,7 @@ func (c *LedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 	if err != nil {
 		return fmt.Errorf("cache/ledis: error opening db: %v", err)
 	}
-	c.db, err = c.c.Select(db) // gc
+	c.db, err = c.c.Select(db) // with gc
 	return err
 }
 
