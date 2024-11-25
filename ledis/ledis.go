@@ -38,7 +38,6 @@ type LedisCacher struct {
 	codec    encoding.Codec
 	c        *ledis.Ledis
 	db       *ledis.DB
-	interval int
 }
 
 func (c *LedisCacher) SetCodec(codec encoding.Codec) {
@@ -144,39 +143,9 @@ func (c *LedisCacher) Flush(ctx context.Context) error {
 	// return err
 }
 
-func (c *LedisCacher) startGC(ctx context.Context) {
-	if c.interval < 1 {
-		return
-	}
-
-	kvs, err := c.db.HGetAll(defaultHSetName)
-	if err != nil {
-		log.Printf("cache/ledis: error garbage collecting(get): %v", err)
-		return
-	}
-	if ctx == nil {
-		ctx = context.Background()
-	}
-	now := time.Now().Unix()
-	for _, v := range kvs {
-		expire := com.Int64(v.Value)
-		if expire == 0 || now < expire {
-			continue
-		}
-
-		if err = c.Delete(ctx, string(v.Field)); err != nil {
-			log.Printf("cache/ledis: error garbage collecting(delete): %v", err)
-			continue
-		}
-	}
-
-	time.AfterFunc(time.Duration(c.interval)*time.Second, func() { c.startGC(ctx) })
-}
-
 // StartAndGC starts GC routine based on config string settings.
 // AdapterConfig: data_dir=./app.db,db=0
 func (c *LedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error {
-	c.interval = opts.Interval
 
 	cfg, err := ini.Load([]byte(strings.Replace(opts.AdapterConfig, ",", "\n", -1)))
 	if err != nil {
@@ -195,22 +164,16 @@ func (c *LedisCacher) StartAndGC(ctx context.Context, opts cache.Options) error 
 			return fmt.Errorf("cache/ledis: unsupported option '%s'", k)
 		}
 	}
-
+        opt.TTLCheckInterval = opts.Interval
 	c.c, err = ledis.Open(opt)
 	if err != nil {
 		return fmt.Errorf("cache/ledis: error opening db: %v", err)
 	}
-	c.db, err = c.c.Select(db)
-	if err != nil {
-		return err
-	}
-
-	go c.startGC(ctx)
-	return nil
+	c.db, err = c.c.Select(db) // gc
+	return err
 }
 
 func (c *LedisCacher) Close() error {
-	c.interval = 0
 	if c.c == nil {
 		return nil
 	}
