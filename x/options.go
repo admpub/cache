@@ -12,6 +12,8 @@ type Options struct {
 	// UseFreshData will ignore content in the cache and always pull fresh data.
 	// The pulled data will subsequently be saved in the cache.
 	useFreshData bool
+
+	removeData bool
 }
 
 func (o *Options) SetQuerier(querier Querier) {
@@ -32,6 +34,10 @@ func (o *Options) SetDisableCacheUsage(disableCacheUsage bool) {
 
 func (o *Options) SetUseFreshData(useFreshData bool) {
 	o.useFreshData = useFreshData
+}
+
+func (o *Options) SetRemoveData(removeData bool) {
+	o.removeData = removeData
 }
 
 // GetOption Get方法的可选参数项结构，不需要直接调用。
@@ -66,5 +72,11 @@ func DisableCacheUsage(disableCacheUsage bool) GetOption {
 func UseFreshData(useFreshData bool) GetOption {
 	return func(o *Options) {
 		o.SetUseFreshData(useFreshData)
+	}
+}
+
+func RemoveData(removeData bool) GetOption {
+	return func(o *Options) {
+		o.SetRemoveData(removeData)
 	}
 }

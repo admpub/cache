@@ -94,6 +94,10 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 		}
 		return querier.Query()
 	}
+	if options.removeData {
+		c.storage.Delete(ctx, key)
+		return querier.Query()
+	}
 	var (
 		ttl int64
 		err error
