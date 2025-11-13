@@ -119,6 +119,9 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 		return c.storage.Put(ctx, key, value, ttl)
 	}
 	err = c.storage.Get(ctx, key, value)
+	if err == nil {
+		return err
+	}
 	switch err {
 	case cache.ErrNotFound, cache.ErrExpired: // 下面查询
 	default:
@@ -129,7 +132,8 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 	}
 	// 在一份实例中
 	// 不同时发起重复的查询请求——解决缓存失效风暴
-	getValue, getErr, _ := c.storage.Do(key, func() (interface{}, error) {
+	var getValue interface{}
+	getValue, err, _ = c.storage.Do(key, func() (interface{}, error) {
 		dErr := c.storage.Get(ctx, key, value)
 		if dErr == nil {
 			return value, dErr
@@ -154,7 +158,7 @@ func (c *Cachex) get(ctx context.Context, key string, value interface{}, options
 		dErr = c.storage.Put(ctx, key, value, ttl)
 		return value, dErr
 	})
-	if getErr != nil {
+	if err != nil {
 		return err
 	}
 	if getValue == value {
